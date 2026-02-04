@@ -8,9 +8,24 @@ import os
 import sys
 import pyautogui
 import webbrowser
+import subprocess
+import time
+import psutil
 
-# SETUP
-engine = pyttsx3.init()
+# --- ULTRA-PRO SETUP ---
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+
+# CHAGUA SAUTI YA KIKE
+# Kwenye Windows nyingi, voices[1] ndio David (Kiume) na voices[0] au [1] ni Zira (Kike).
+# Ikishindwa, itatumia iliyopo.
+for voice in voices:
+    if "Zira" in voice.name or "Female" in voice.name:
+        engine.setProperty('voice', voice.id)
+        break
+
+engine.setProperty('rate', 190)  # Kasi ya sauti (Natural speed)
+engine.setProperty('volume', 1.0) # Sauti iwe juu kabisa
 
 def speak(text):
     print(f"Serra: {text}")
@@ -20,82 +35,105 @@ def speak(text):
 def take_command():
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        print("Serra is listening...")
-        r.pause_threshold = 1
+        print("\n[SERRA IS LISTENING...]")
+        r.adjust_for_ambient_noise(source, duration=0.5)
         audio = r.listen(source)
     try:
+        print("[ANALYZING...]")
         query = r.recognize_google(audio, language='en-in')
+        print(f"User Request: {query}\n")
         return query.lower()
-    except Exception as e:
+    except:
         return "none"
 
 def run_serra():
-    command = take_command()
-    print(f"User command: {command}")
+    query = take_command()
+    if query == "none": return
 
-    if command == "none":
-        return
+    # --- 1. SMART APP OPENER (PRO LEVEL) ---
+    if 'open' in query:
+        app_name = query.replace('open ', '').strip()
+        speak(f"Searching for {app_name} in your system, Boss.")
+        try:
+            # Hii inafungua app yoyote hata kama haiko kwenye PATH
+            pyautogui.press('win')
+            time.sleep(0.5)
+            pyautogui.write(app_name)
+            time.sleep(0.5)
+            pyautogui.press('enter')
+            speak(f"I have launched {app_name} for you.")
+        except Exception as e:
+            speak("I couldn't find the application, should I search for it on Google?")
 
-    # --- AMRI ZA MTANDAONI (BROWSERS) ---
-    if 'open google' in command:
-        speak("Opening Google")
-        webbrowser.open("https://www.google.com")
+    # --- 2. AI TYPING ASSISTANT (ANDIKA CHOCHOTE) ---
+    elif 'type' in query or 'write' in query:
+        speak("Ready to type. Please tell me the content, Boss.")
+        content = take_command()
+        if content != "none":
+            speak("Starting to type in 3 seconds. Place your cursor where you want the text.")
+            time.sleep(3)
+            pyautogui.write(content, interval=0.02)
+            speak("Content has been written successfully.")
 
-    elif 'open chrome' in command:
-        speak("Opening Chrome")
-        # Kama unataka kufungua app yenyewe ya Chrome:
-        webbrowser.open("https://www.google.com")
+    # --- 3. SYSTEM BRAIN (PC STATUS) ---
+    elif 'battery' in query:
+        battery = psutil.sensors_battery()
+        speak(f"Your system has {battery.percent} percent battery remaining.")
 
-    elif 'open whatsapp' in command:
-        speak("Opening WhatsApp Web")
-        webbrowser.open("https://web.whatsapp.com")
+    elif 'cpu' in query:
+        usage = str(psutil.cpu_percent())
+        speak(f"Your CPU is currently at {usage} percent usage.")
 
-    elif 'play' in command:
-        song = command.replace('play', '')
-        speak(f"Playing {song} on YouTube")
+    # --- 4. WEB & KNOWLEDGE ---
+    elif 'search' in query:
+        search_query = query.replace('search', '')
+        speak(f"Scanning the web for {search_query}...")
+        pywhatkit.search(search_query)
+
+    elif 'play' in query:
+        song = query.replace('play', '')
+        speak(f"Playing {song} on YouTube. Enjoy!")
         pywhatkit.playonyt(song)
-    
-    elif 'search' in command:
-        item = command.replace('search', '')
-        speak(f"Searching {item} on Google")
-        pywhatkit.search(item)
 
-    # --- AMRI ZA MFUMO WA PC (SYSTEM) ---
-    elif 'open notepad' in command:
-        speak("Opening Notepad")
-        os.system("notepad")
-        
-    elif 'close notepad' in command:
-        os.system("taskkill /f /im notepad.exe")
+    elif 'who is' in query or 'what is' in query:
+        speak("Searching intelligence databases...")
+        try:
+            results = wikipedia.summary(query, sentences=2)
+            speak(results)
+        except:
+            speak("I couldn't find a direct answer. Let me search on Google for you.")
+            pywhatkit.search(query)
 
-    elif 'screenshot' in command:
-        image = pyautogui.screenshot()
-        image.save("serra_screenshot.png")
-        speak("Screenshot saved, Boss.")
+    # --- 5. CONTROL & AUTOMATION ---
+    elif 'screenshot' in query:
+        speak("Capturing screen...")
+        name = f"screenshot_{datetime.datetime.now().hour}{datetime.datetime.now().minute}.png"
+        pyautogui.screenshot(name)
+        speak(f"Snapshot saved as {name}.")
 
-    elif 'volume up' in command:
-        pyautogui.press("volumeup")
+    elif 'volume up' in query:
+        for _ in range(10): pyautogui.press("volumeup")
+        speak("Volume increased.")
 
-    elif 'volume down' in command:
-        pyautogui.press("volumedown")
+    elif 'volume down' in query:
+        for _ in range(10): pyautogui.press("volumedown")
 
-    # --- AMRI ZA HABARI ---
-    elif 'time' in command:
-        current_time = datetime.datetime.now().strftime('%I:%M %p')
-        speak(f"The time is {current_time}")
+    elif 'minimize all' in query:
+        pyautogui.hotkey('win', 'd')
+        speak("Desktop cleared.")
 
-    elif 'who is' in command:
-        person = command.replace('who is', '')
-        speak(wikipedia.summary(person, 1))
-
-    elif 'joke' in command:
-        speak(pyjokes.get_joke())
-
-    elif 'exit' in command or 'stop' in command:
-        speak("Serra system offline. Goodbye!")
+    # --- 6. OFFLINE ---
+    elif 'go to sleep' in query or 'exit' in query:
+        speak("System going to sleep mode. Call me when you need me. Goodbye!")
         sys.exit()
 
 if __name__ == "__main__":
-    speak("Serra Full System Online. Waiting for your orders.")
+    hour = int(datetime.datetime.now().hour)
+    if hour < 12: speak("Good morning, Boss.")
+    elif 12 <= hour < 18: speak("Good afternoon, Boss.")
+    else: speak("Good evening, Boss.")
+    
+    speak("Serra Ultra-Pro is active. I am now using my high-performance female voice. How can I serve you?")
+    
     while True:
         run_serra()

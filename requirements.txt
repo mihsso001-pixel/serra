@@ -1,7 +1,8 @@
 pyttsx3
 speechRecognition
+pyaudio
 pywhatkit
 wikipedia
 pyjokes
-pyaudio
 pyautogui
+requests

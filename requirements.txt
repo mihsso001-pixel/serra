@@ -4,3 +4,4 @@ pywhatkit
 wikipedia
 pyjokes
 pyaudio
+pyautogui

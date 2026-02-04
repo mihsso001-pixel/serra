@@ -9,10 +9,17 @@ import pyautogui
 import webbrowser
 import time
 import psutil
+import google.generativeai as genai
 
-# --- SETUP SAUTI YA KIKE (ZIRA) ---
+# --- CONFIGURATION YA GEMINI ---
+API_KEY = "AIzaSyBlxCHYr2nriXeLsI969JcylU9EbmW_VT4"
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash') # Toleo la kasi zaidi
+
+# --- SETUP SAUTI (FEMALE PRO) ---
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
+# Tafuta sauti ya kike (Zira), kama haipo tumia iliyopo
 for voice in voices:
     if "Zira" in voice.name or "Female" in voice.name:
         engine.setProperty('voice', voice.id)
@@ -27,92 +34,93 @@ def speak(text):
 def take_command():
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        print("\n[LISTENING...]")
+        print("\n[SERRA IS LISTENING...]")
         r.pause_threshold = 0.8
+        r.adjust_for_ambient_noise(source, duration=0.5)
         audio = r.listen(source)
     try:
+        print("[PROCESSING...]")
         query = r.recognize_google(audio, language='en-in')
-        print(f"Boss said: {query}")
+        print(f"Boss: {query}")
         return query.lower()
     except:
         return "none"
+
+def ask_gemini(prompt):
+    """Inatumia akili ya Gemini kujibu maswali magumu"""
+    try:
+        response = model.generate_content(f"Keep the answer short and professional for a voice assistant: {prompt}")
+        return response.text
+    except Exception as e:
+        return "I am having trouble connecting to my brain, but I can still perform PC tasks."
 
 def run_serra():
     query = take_command()
     if query == "none": return
 
-    # --- 1. MOUSE CONTROL (SIRI YA MOUSE) ---
-    if 'move mouse' in query:
-        speak("I have gained control of the mouse. Where should I move it?")
-        # Mfano: "move mouse to top left"
-        if 'top left' in query: pyautogui.moveTo(100, 100, duration=1)
-        elif 'center' in query: pyautogui.moveTo(960, 540, duration=1)
-        speak("Mouse relocated as requested.")
-
-    elif 'click' in query:
-        speak("Affirmative, performing a left click.")
-        pyautogui.click()
-
-    elif 'double click' in query:
-        speak("Double clicking now.")
-        pyautogui.doubleClick()
-
-    # --- 2. ADVANCED TYPING (ASSISTANT MODE) ---
-    elif 'write' in query or 'type' in query:
-        speak("I understand perfectly. I am ready to be your secretary. What is the message?")
+    # 1. SMART TYPING (SECRETARY MODE)
+    if 'write' in query or 'type' in query:
+        speak("Ready to take dictation. What exactly should I type for you, Boss?")
         content = take_command()
         if content != "none":
-            speak(f"Message received: {content}. I will start typing in 5 seconds. Please focus your window.")
+            speak("Understood. I'll start typing in 5 seconds. Place your cursor in the document.")
             time.sleep(5)
-            speak("Typing in progress...")
-            pyautogui.write(content, interval=0.05)
-            speak("I have finished writing everything, Boss. Anything else?")
+            pyautogui.write(content, interval=0.03)
+            speak("Done! I've typed it out as you requested.")
 
-    # --- 3. SYSTEM EXPLORER (INGIA KOKOTE) ---
+    # 2. APP CONTROL & NAVIGATION
     elif 'open' in query:
         app = query.replace('open ', '').strip()
-        speak(f"Understood. Accessing system files to launch {app}. Standby.")
+        speak(f"Searching and launching {app} now.")
         pyautogui.press('win')
-        time.sleep(1)
+        time.sleep(0.5)
         pyautogui.write(app)
-        time.sleep(1)
+        time.sleep(0.5)
         pyautogui.press('enter')
-        speak(f"Successfully entered {app}. System is now synchronized.")
 
-    # --- 4. SMART SEARCH (KUELEWA CHOCHOTE) ---
-    elif 'what is' in query or 'who is' in query or 'explain' in query:
-        speak("Query accepted. Accessing my knowledge database to explain this to you.")
-        try:
-            results = wikipedia.summary(query, sentences=3)
-            speak("Here is what I have found regarding your request:")
-            speak(results)
-        except:
-            speak("I need to dive deeper. Opening Google for a full intelligence report.")
-            pywhatkit.search(query)
-
-    # --- 5. AUTOMATION (CLOSE & MINIMIZE) ---
-    elif 'close' in query:
-        speak("Terminating the current window. Goodbye app.")
-        pyautogui.hotkey('alt', 'f4')
-
+    # 3. MOUSE CONTROL (PRO)
+    elif 'click' in query:
+        speak("Clicking now.")
+        pyautogui.click()
+        
     elif 'scroll down' in query:
-        speak("Scrolling down for you.")
-        pyautogui.scroll(-500)
+        speak("Scrolling down.")
+        pyautogui.scroll(-800)
 
-    elif 'scroll up' in query:
-        speak("Scrolling up.")
-        pyautogui.scroll(500)
+    # 4. YOUTUBE (SMART PLAY)
+    elif 'play' in query:
+        song = query.replace('play', '')
+        speak(f"Opening YouTube to play {song}. Sit back and relax.")
+        pywhatkit.playonyt(song)
 
-    # --- 6. PC STATUS ---
-    elif 'status' in query:
+    # 5. SYSTEM STATUS
+    elif 'system status' in query or 'pc status' in query:
         battery = psutil.sensors_battery().percent
-        speak(f"System status is stable. Battery is at {battery} percent. CPU performance is optimal.")
+        cpu = psutil.cpu_percent()
+        speak(f"Boss, your battery is at {battery} percent, and CPU usage is at {cpu} percent. Everything looks stable.")
 
-    elif 'exit' in query or 'sleep' in query:
-        speak("Serra is going offline. Secure mode activated. Have a great time, Boss.")
-        sys.exit()
+    # 6. SHUTDOWN/RESTART
+    elif 'shutdown' in query:
+        speak("System will shutdown in 10 seconds. Goodbye Boss.")
+        os.system("shutdown /s /t 10")
+        
+    elif 'screenshot' in query:
+        speak("Taking a snapshot.")
+        pyautogui.screenshot("serra_capture.png")
+
+    # 7. CHAT & KNOWLEDGE (GEMINI BRAIN)
+    else:
+        # Hapa sasa ndipo Gemini anafanya kazi yake ya kujibu lolote
+        answer = ask_gemini(query)
+        speak(answer)
 
 if __name__ == "__main__":
-    speak("Serra Intelligence System Activated. High-performance mode is ON. I am ready to explore and assist. What are your orders?")
+    hour = int(datetime.datetime.now().hour)
+    if hour < 12: speak("Good morning, Boss.")
+    elif 12 <= hour < 18: speak("Good afternoon, Boss.")
+    else: speak("Good evening, Boss.")
+    
+    speak("Serra Intelligence is synchronized with Gemini. I am now your most powerful tool. How can I help you today?")
+    
     while True:
         run_serra()

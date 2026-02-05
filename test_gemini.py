@@ -1,36 +1,28 @@
 from google import genai
 
-# Weka ile API Key yako mpya hapa (Hakikisha haina space)
+# Tumia ile API Key yako mpya
 API_KEY = "AIzaSyBmMWiZSfyzlGyRGoMTZUazbAH8HOv6ESI"
 
 def test_serra():
-    print("--- SERRA BRAIN: ULTIMATE CONNECTION ---")
+    print("--- SERRA BRAIN: 2.5 GENERATION ACTIVATION ---")
     try:
-        # 1. Tunatengeneza client
         client = genai.Client(api_key=API_KEY)
         
-        print("Mawasiliano: Inapiga simu Google Headquarters...")
+        print("Mawasiliano: Inawasha injini ya Gemini 2.5 Flash...")
 
-        # 2. TUNATUMIA MBINU MPYA KABISA (Hapa haitatumia v1beta)
+        # TUNATUMIA MODEL ILIYOPO KWENYE LIST YAKO
         response = client.models.generate_content(
-            model="gemini-1.5-flash", 
-            contents="Confirm system: Say 'Serra 1.5 is Online'"
+            model="gemini-2.5-flash", 
+            contents="Confirm system: Say 'Serra 2.5 Overlord is Online'"
         )
 
-        print("\n" + "💎"*10)
+        print("\n" + "🌀"*10)
         print(f"JIBU LA SERRA: {response.text.strip()}")
-        print("💎"*10)
-        print("\nSUCCESS! Mchawi kashindwa safari hii.")
+        print("🌀"*10)
+        print("\nSUCCESS! Umefungua mlango wa teknolojia ya 2026.")
 
     except Exception as e:
-        # Kama ikikataa hapa, tutaiambia itupe list ya models zilizopo
         print(f"\n❌ Error: {e}")
-        print("\nInajaribu kutafuta models zilizopo kwenye akaunti yako...")
-        try:
-            for m in client.models.list():
-                print(f"Model inayopatikana: {m.name}")
-        except:
-            pass
 
 if __name__ == "__main__":
     test_serra()

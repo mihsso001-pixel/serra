@@ -2,7 +2,7 @@ import customtkinter as ctk
 import threading
 import speech_recognition as sr
 import pyttsx3
-import google.generativeai as genai
+from google import genai  # Library ya kisasa zaidi (v3)
 import time
 import os
 import webbrowser
@@ -10,17 +10,18 @@ import math
 import sys
 
 # ==========================================================
-# 1. BRAIN CONFIGURATION (MODEL NAME FIXED)
+# 1. BRAIN CONFIGURATION (UPDATED FOR 2026 SDK)
 # ==========================================================
-API_KEY = "AIzaSyBX_KLp0IChE2PfJBRlU30qJKpdUrZCEnI" 
+API_KEY = "AIzaSyDyALjWG3yA0tshV3InvZCRADpPcyHa_VE" 
 
 try:
-    genai.configure(api_key=API_KEY)
-    # Tumetumia jina la model ambalo ni stable zaidi kuzuia 404 error
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    # Tunatumia Client ya kisasa
+    client = genai.Client(api_key=API_KEY)
+    # Model uliyoipata kwenye list yako
+    MODEL_NAME = "gemini-2.5-flash" 
 except Exception as e:
     print(f"API Configuration Error: {e}")
-    model = None
+    client = None
 
 # ==========================================================
 # 2. THE STABLE VOICE ENGINE (THREAD-SAFE)
@@ -30,31 +31,29 @@ class VoiceSystem:
         self.lock = threading.Lock()
         
     def speak(self, text):
-        # Tunatumia Lock kuhakikisha sauti hazipigani (No "run loop" error)
         with self.lock:
             try:
                 print(f"Serra: {text}")
-                # Kila mara tunatengeneza engine mpya na kuifuta ili kuzuia kulegalega
-                temp_engine = pyttsx3.init('sapi5')
+                temp_engine = pyttsx3.init()
                 voices = temp_engine.getProperty('voices')
+                # Chagua sauti ya kike (kawaida ni index 1)
                 temp_engine.setProperty('voice', voices[1].id if len(voices) > 1 else voices[0].id)
                 temp_engine.setProperty('rate', 185)
                 temp_engine.say(text)
                 temp_engine.runAndWait()
                 temp_engine.stop()
-                del temp_engine # Inafuta engine kwenye memory
             except Exception as e:
                 print(f"Voice Error: {e}")
 
 voice_box = VoiceSystem()
 
 # ==========================================================
-# 3. MAIN INTERFACE
+# 3. MAIN INTERFACE (SERRA UI)
 # ==========================================================
 class SerraAI(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("SERRA AI - THE ULTIMATE")
+        self.title("SERRA AI - OVERLORD v3")
         self.geometry("500x700")
         self.attributes("-topmost", True)
         self.config(bg='#010103')
@@ -66,15 +65,20 @@ class SerraAI(ctk.CTk):
         # UI Visuals
         self.header = ctk.CTkLabel(self, text="SERRA", font=("Impact", 80), text_color="#00f2ff")
         self.header.pack(pady=40)
+        
         self.canvas = ctk.CTkCanvas(self, width=400, height=350, bg='#010103', highlightthickness=0)
         self.canvas.pack()
+        
         self.orb = self.canvas.create_oval(100, 50, 300, 250, outline="#00f2ff", width=2)
         self.wave = self.canvas.create_line(100, 150, 300, 150, fill="#00f2ff", width=4, smooth=True)
+        
         self.status = ctk.CTkLabel(self, text="READY", font=("Consolas", 14), text_color="#333")
         self.status.pack(pady=20)
+        
         self.btn = ctk.CTkButton(self, text="INITIALIZE CORE", font=("Segoe UI", 22, "bold"), 
                                  command=self.toggle, fg_color="#008080", height=65, corner_radius=15)
         self.btn.pack(pady=10, fill="x", padx=70)
+        
         self.animate()
 
     def animate(self):
@@ -109,7 +113,7 @@ class SerraAI(ctk.CTk):
         r = sr.Recognizer()
         with sr.Microphone() as source:
             r.dynamic_energy_threshold = True
-            r.pause_threshold = 0.5
+            r.pause_threshold = 0.6
             while self.active:
                 try:
                     audio = r.listen(source, timeout=None, phrase_time_limit=6)
@@ -120,34 +124,33 @@ class SerraAI(ctk.CTk):
     def execute(self, query):
         print(f"Master: {query}")
         
-        # 1. DIRECT COMMANDS (Fastest)
+        # 1. DIRECT COMMANDS
         if 'calculator' in query:
-            threading.Thread(target=self.trigger_speech, args=("Opening calculator.",)).start()
+            threading.Thread(target=self.trigger_speech, args=("Launching calculator.",)).start()
             os.system("calc")
         elif 'google' in query or 'search' in query:
             item = query.replace("google", "").replace("search", "").strip()
             threading.Thread(target=self.trigger_speech, args=(f"Searching {item}",)).start()
             webbrowser.open(f"https://www.google.com/search?q={item}")
-        elif 'word' in query:
-            threading.Thread(target=self.trigger_speech, args=("Launching Word.",)).start()
-            os.system("start winword")
         elif 'who are you' in query:
-            threading.Thread(target=self.trigger_speech, args=("I am Serra AI. An advanced system overlord. I control this PC with absolute efficiency.",)).start()
+            threading.Thread(target=self.trigger_speech, args=("I am Serra. Your system's neural interface.",)).start()
 
-        # 2. AI BRAIN (With 404 Protection)
+        # 2. AI BRAIN (2026 SDK Method)
         else:
-            if model:
+            if client:
                 try:
                     self.status.configure(text="THINKING...", text_color="#ff007f")
-                    # Tumeseti model kwa jina kamili kuzuia 404
-                    response = model.generate_content(f"You are Serra AI. Be very brief: {query}")
+                    response = client.models.generate_content(
+                        model=MODEL_NAME, 
+                        contents=f"You are Serra AI, a direct and sharp system assistant. Answer briefly: {query}"
+                    )
                     threading.Thread(target=self.trigger_speech, args=(response.text,)).start()
                     self.status.configure(text="LISTENING...", text_color="#00f2ff")
                 except Exception as e:
                     print(f"Gemini Error: {e}")
-                    threading.Thread(target=self.trigger_speech, args=("Neural connection unstable. Check your network or API quota.",)).start()
+                    threading.Thread(target=self.trigger_speech, args=("Brain link failed. Check API status.",)).start()
             else:
-                threading.Thread(target=self.trigger_speech, args=("Brain module not loaded.",)).start()
+                threading.Thread(target=self.trigger_speech, args=("Brain module not configured.",)).start()
 
 if __name__ == "__main__":
     try:

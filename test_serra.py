@@ -1,44 +1,34 @@
-import os
-import webbrowser
 import google.generativeai as genai
 
-# Weka API Key yako
+# API Key yako
 API_KEY = "AIzaSyBX_KLp0IChE2PfJBRlU30qJKpdUrZCEnI"
-genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
-def test_serra():
-    print("--- SERRA SILENT TEST MODE ---")
-    print("Andika amri (mfano: 'open calculator', 'who are you', 'exit')")
+print("--- SERRA BRAIN CHECK (GEMINI TEST) ---")
+print("Connecting to neural network...")
+
+try:
+    # 1. Configuration
+    genai.configure(api_key=API_KEY)
     
-    while True:
-        query = input("\nMaster (Type here): ").lower()
-        
-        if 'exit' in query:
-            print("Serra: Shutting down test mode.")
-            break
-            
-        # 1. Test Amri za PC
-        if 'calculator' in query:
-            print("Serra: Opening Calculator...")
-            os.system("calc")
-            
-        elif 'word' in query:
-            print("Serra: Opening Word...")
-            os.system("start winword")
-            
-        elif 'google' in query:
-            print("Serra: Opening Google...")
-            webbrowser.open("https://www.google.com")
-            
-        # 2. Test Akili ya Gemini (API)
-        else:
-            print("Serra: Thinking...")
-            try:
-                response = model.generate_content(f"You are Serra AI. Answer briefly: {query}")
-                print(f"Serra says: {response.text}")
-            except Exception as e:
-                print(f"Gemini Error: {e}")
+    # 2. Initialize Model (Tunatumia jina kamili kuzuia 404)
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    
+    # 3. Simple Prompt
+    prompt = "Hello Gemini! If you can hear me, say 'Serra Brain is Online!'"
+    
+    print(f"Sending request: '{prompt}'")
+    
+    # 4. Response with timeout handling
+    response = model.generate_content(prompt)
+    
+    print("\n" + "="*30)
+    print(f"GEMINI RESPONSE: {response.text}")
+    print("="*30)
+    print("\nSUCCESS! Injini imewaka, Serra yuko tayari.")
 
-if __name__ == "__main__":
-    test_serra()
+except Exception as e:
+    print("\n" + "!"*30)
+    print("FAILURE! Shida imetokea:")
+    print(f"Error Message: {e}")
+    print("!"*30)
+    print("\nUshauri: Hakikisha una internet na API Key haijafika kikomo (limit).")

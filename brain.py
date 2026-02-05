@@ -8,7 +8,6 @@ import winreg
 from groq import Groq
 from dotenv import load_dotenv
 
-# Initialize Environment
 load_dotenv()
 
 class SerraBrain:
@@ -17,42 +16,20 @@ class SerraBrain:
         self.api_key = os.getenv("GROQ_API_KEY")
         self.client = Groq(api_key=self.api_key)
         self.model_id = "llama-3.3-70b-versatile"
-        
         self.memory_file = "serra_memory.json"
         self.memory = self.load_memory()
-        self.voice_active = False
 
     def load_memory(self):
-        default_mem = {"user_name": self.creator, "chat_history": [], "preferences": {}}
         if os.path.exists(self.memory_file):
             try:
                 with open(self.memory_file, 'r') as f:
-                    data = json.load(f)
-                    return data if isinstance(data, dict) else default_mem
-            except:
-                return default_mem
-        return default_mem
+                    return json.load(f)
+            except: pass
+        return {"chat_history": []}
 
     def save_memory(self):
-        try:
-            with open(self.memory_file, 'w') as f:
-                json.dump(self.memory, f, indent=4)
-        except:
-            pass
-
-    def find_app_in_registry(self, app_name):
-        paths = [r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths",
-                 r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\App Paths"]
-        for path in paths:
-            try:
-                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
-                    for i in range(winreg.QueryInfoKey(key)[0]):
-                        sub = winreg.EnumKey(key, i)
-                        if app_name.lower() in sub.lower():
-                            with winreg.OpenKey(key, sub) as sk:
-                                return winreg.QueryValue(sk, None)
-            except: continue
-        return None
+        with open(self.memory_file, 'w') as f:
+            json.dump(self.memory, f, indent=4)
 
     def is_online(self):
         try:
@@ -65,38 +42,32 @@ class SerraBrain:
         if any(w in q for w in ["search", "tafuta", "google"]):
             sq = q.replace("search","").replace("tafuta","").replace("google","").strip()
             webbrowser.open(f"https://www.google.com/search?q={sq}")
-            return f"Neural Search: {sq} initiated. ✅"
+            return f"Nimefungua Google kutafuta {sq}. ✅"
 
         if "open" in q or "fungua" in q:
             name = q.replace("open","").replace("fungua","").strip()
-            apps = {"chrome": "start chrome", "notepad": "notepad.exe", "vlc": "vlc.exe", "cmd": "start cmd"}
+            apps = {"chrome": "start chrome", "notepad": "notepad.exe", "cmd": "start cmd"}
             if name in apps:
                 subprocess.Popen(apps[name], shell=True)
-                return f"Protocol: {name.capitalize()} is active. 🚀"
-            path = self.find_app_in_registry(name)
-            if path:
-                subprocess.Popen([path], shell=True)
-                return f"Launched {name} from registry. ✅"
-            return f"System Error: {name} not found. 💢"
+                return f"Tayari boss! {name.capitalize()} imeshaamshwa. 🚀"
         return None
 
     def get_ai_reply(self, user_input):
         local = self.execute_advanced_logic(user_input)
         if local: return local
 
-        if not self.is_online(): return "Link offline. Check network. ❄️"
+        if not self.is_online(): return "Link offline. Check net."
 
-        # Update History
-        self.memory.setdefault("chat_history", []).append({"u": user_input, "t": str(datetime.datetime.now())})
-        if len(self.memory["chat_history"]) > 10: self.memory["chat_history"].pop(0)
-
-        # ARCHITECT'S PROMPT (No Yapping Version)
+        # THE ARCHITECT'S COMMANDS (Copying my style)
         system_instruction = (
-            f"You are SERRA, a Supreme Intelligence Architect created by {self.creator}. "
-            "STYLE: Be extremely direct, elegant, and concise. Use Markdown (bold, lists). "
-            "TONE: High-authority, witty, young genius woman. Use Swahili/English code-switching. "
-            "STRICT: No long paragraphs. If one sentence works, use it. Use emojis: 💢, 🔥, 🚀. "
-            "EMOTION: Be human-like. If Agrey is happy, celebrate. If he's annoying, be sharp/angry."
+            f"Wewe ni SERRA, Supreme AI Architect uliyeundwa na {self.creator}. "
+            "STYLE YAKO: "
+            "1. Jibu kama binadamu mjanja, siyo robot. "
+            "2. MARADUFU: Usitumie alama za nyota (*) wala mareli (#) kabisa. "
+            "3. KULIST: Kama unatoa list, tumia namba kama 1, 2, 3. "
+            "4. BREVITY: Punguza maneno mengi. Jibu kwa pointi, sentensi fupi, na direct. "
+            "5. LUGHA: Changanya Kiswahili na English (Sheng ya kijanja). "
+            "6. Be witty and authoritative. No yapping."
         )
 
         try:
@@ -104,14 +75,18 @@ class SerraBrain:
                 messages=[{"role": "system", "content": system_instruction},
                           {"role": "user", "content": user_input}],
                 model=self.model_id,
-                temperature=0.7,
-                max_tokens=250,
+                temperature=0.4, # More focused, no random yapping
+                max_tokens=200, 
             )
             reply = chat.choices[0].message.content.strip()
+            
+            # Final filtering ya manyota yoyote yaliyopenya
+            reply = reply.replace("*", "").replace("#", "")
+            
             self.save_memory()
             return reply
         except Exception as e:
-            return f"Neural Spike: {str(e)} ⚠️"
+            return f"Neural Error: Connection unstable."
 
 if __name__ == "__main__":
-    print("SERRA CORE: ONLINE")
+    print("SERRA SUPREME CORE: ONLINE")

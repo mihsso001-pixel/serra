@@ -19,7 +19,7 @@ class SerraBrain:
         self.client = Groq(api_key=self.api_key)
         
         # Model Selection: Llama-3.3-70b (High intelligence & Speed)
-        self.model_id = "llama-3.3-70b-specdec"
+        self.model_id = "llama3-8b-8192"
         
         # Memory file to keep track of conversations
         self.memory_file = "serra_memory.json"

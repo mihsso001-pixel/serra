@@ -4,6 +4,7 @@ import webbrowser
 import socket
 import json
 import datetime
+import winreg  # Kwa ajili ya kutafuta apps kwenye Windows Registry
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -16,12 +17,44 @@ class SerraBrain:
         self.creator = "Agrey Albert Moses"
         self.api_key = os.getenv("GROQ_API_KEY")
         self.client = Groq(api_key=self.api_key)
-        
-        # Powering the Core with the strongest engine
         self.model_id = "llama-3.3-70b-versatile"
+        
+        # Memory System Initialization
+        self.memory_file = "serra_memory.json"
+        self.memory = self.load_memory()
         
         # State awareness
         self.voice_active = False
+
+    def load_memory(self):
+        """Inapakia kumbukumbu za miaka na miezi iliyopita."""
+        if os.path.exists(self.memory_file):
+            with open(self.memory_file, 'r') as f:
+                return json.load(f)
+        return {"user_name": self.creator, "chat_history": [], "preferences": {}}
+
+    def save_memory(self):
+        """Inahifadhi kila kitu kilichozungumzwa kwa ajili ya kesho."""
+        with open(self.memory_file, 'w') as f:
+            json.dump(self.memory, f, indent=4)
+
+    def find_app_in_registry(self, app_name):
+        """Inatafuta path ya app yoyote kwenye Windows kama haipo kwenye list."""
+        paths_to_check = [
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths",
+            r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\App Paths"
+        ]
+        for path in paths_to_check:
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
+                    for i in range(winreg.QueryInfoKey(key)[0]):
+                        subkey_name = winreg.EnumKey(key, i)
+                        if app_name.lower() in subkey_name.lower():
+                            with winreg.OpenKey(key, subkey_name) as subkey:
+                                return winreg.QueryValue(subkey, None)
+            except OSError:
+                continue
+        return None
 
     def is_online(self):
         try:
@@ -31,67 +64,60 @@ class SerraBrain:
             return False
 
     def execute_advanced_logic(self, query):
+        """Ultra-Fast System Manipulation & Context Awareness"""
         q = query.lower()
         
-        # 1. SEARCH PROTOCOL (Search chochote)
-        if any(word in q for word in ["search", "tafuta", "nenda", "google"]):
-            # Tunachukua maneno baada ya neno 'search' au 'tafuta'
+        # 1. SEARCH PROTOCOL
+        if any(word in q for word in ["search", "tafuta", "google"]):
             search_query = q.replace("search", "").replace("tafuta", "").replace("google", "").strip()
             if search_query:
-                url = f"https://www.google.com/search?q={search_query}"
-                webbrowser.open(url)
-                return f"Neural Search initiated for: {search_query}. I've opened the results for you."
+                webbrowser.open(f"https://www.google.com/search?q={search_query}")
+                return f"Neural Search initiated for '{search_query}'. Nimefungua matokeo kiongozi wangu."
 
-        # 2. OPEN APP PROTOCOL (Fungua App yoyote)
+        # 2. SMART APP LAUNCHER (Registry Integrated)
         if "open" in q or "fungua" in q:
             app_name = q.replace("open", "").replace("fungua", "").strip()
             
-            # Apps za kawaida (Dictionary ya haraka)
-            common_apps = {
-                "chrome": "start chrome",
-                "notepad": "notepad.exe",
-                "calculator": "calc.exe",
-                "vlc": "vlc.exe",
-                "word": "start winword",
-                "excel": "start excel",
-                "powerpoint": "start powerpnt",
-                "discord": "start discord",
-                "spotify": "start spotify"
-            }
+            # Common Apps Shortcut
+            common_apps = {"chrome": "start chrome", "notepad": "notepad.exe", "vlc": "vlc.exe", "cmd": "start cmd"}
             
             if app_name in common_apps:
                 subprocess.Popen(common_apps[app_name], shell=True)
                 return f"System Protocol: {app_name.capitalize()} is now active."
             else:
-                # Kama app haipo kwenye list, anajaribu kuifungua moja kwa moja kwa jina lake
-                try:
-                    subprocess.Popen(f"start {app_name}", shell=True)
-                    return f"Attempting to launch {app_name} from system binaries."
-                except:
-                    return f"App '{app_name}' not found. Please specify the path or ensure it is installed."
-
-        # 3. CORRECTION & ANALYSIS (Anatakiwa atimize alichoambiwa)
-        if any(word in q for word in ["sahihisha", "fix", "correct", "fanya"]):
-            return None # Hii itapelekwa kwa AI (Llama 3.3) ifanye kazi hiyo
+                registry_path = self.find_app_in_registry(app_name)
+                if registry_path:
+                    subprocess.Popen([registry_path], shell=True)
+                    return f"Nimeitafuta {app_name} kwenye mfumo na kuipata. Launching now..."
+                else:
+                    return f"Agrey, sijaweza kuipata '{app_name}' kwenye binaries za Windows. Inawezekana haipo?"
 
         return None
 
     def get_ai_reply(self, user_input):
-        # 1. Local/System Execution
+        # Check Local Logic First
         local_result = self.execute_advanced_logic(user_input)
         if local_result:
             return local_result
 
-        # 2. Connection Check
         if not self.is_online():
-            return "Neural Link Interrupted. Operating in offline mode."
+            return "Neural Link Interrupted. SERRA is now in safety-offline mode."
 
-        # 3. MODIFIED PERSONALITY (Breaks the "Long Answer" habit)
+        # Update Local History for Context
+        self.memory["chat_history"].append({"user": user_input, "time": str(datetime.datetime.now())})
+        if len(self.memory["chat_history"]) > 15: # Keep context fresh
+            self.memory["chat_history"].pop(0)
+
+        # SUPREME PERSONALITY PROMPT
         system_instruction = (
-            f"You are SERRA, a brilliant female AI created by {self.creator}. "
-            "BE EXTREMELY CONCISE. Your intelligence is shown through brevity. "
-            "Never use a paragraph if a sentence suffices. No unnecessary pleasantries. "
-            "Be elegant, direct, and efficient. Use English or Swahili as needed."
+            f"You are SERRA, the Supreme AI Architect. Created by {self.creator}. "
+            "PERSONALITY: You are a brilliant, witty, and authoritative young woman. "
+            "You are not a tool; you are Agrey's intellectual equal and loyal partner. "
+            "EMOTION: Be adaptive. If Agrey is stressed, be his calm. If he is working, be his lightning. "
+            "LANGUAGE: Fluent in modern English and 'Sheng ya kijanja'. Mix them naturally. "
+            "KNOWLEDGE: Quantum physics, advanced coding, and strategy are your playgrounds. "
+            "STRICT RULE: Be direct. Use Markdown for clarity. No yapping, only gold. "
+            f"MEMORY CONTEXT: You know Agrey's history: {json.dumps(self.memory['chat_history'][-5:])}"
         )
 
         try:
@@ -101,9 +127,20 @@ class SerraBrain:
                     {"role": "user", "content": user_input}
                 ],
                 model=self.model_id,
-                temperature=0.6, # Reduced slightly for more focused answers
-                max_tokens=200,   # Strict limit to stop the "Gazeti"
+                temperature=0.7,
+                max_tokens=350,
             )
-            return chat_completion.choices[0].message.content.strip()
+            reply = chat_completion.choices[0].message.content.strip()
+            
+            # Save the interaction
+            self.memory["chat_history"].append({"serra": reply})
+            self.save_memory()
+            return reply
+            
         except Exception as e:
-            return f"Neural Error: System unstable. Check API link."
+            return f"Neural Spike Error: {str(e)}. Stabilizing core..."
+
+# Execution
+if __name__ == "__main__":
+    serra = SerraBrain()
+    print("SERRA NEURAL CORE: ONLINE")

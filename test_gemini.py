@@ -1,7 +1,7 @@
 from google import genai
 
 # Hii ndio key yenyewe kutoka kwenye picha yako (Case Sensitive)
-API_KEY = "AIzaSyD8JtXi8zwa4KCDxa-z2BghRQhnjUG3b6Y"
+API_KEY = "AIzaSyBmMWiZSfyzlGyRGoMTZUazbAH8HOv6ESIY"
 
 def test_serra():
     print("--- SERRA BRAIN CHECK: FINAL ATTEMPT ---")

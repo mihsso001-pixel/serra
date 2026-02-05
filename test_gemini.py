@@ -1,7 +1,7 @@
 from google import genai
 
 # Tumia ile API Key yako mpya
-API_KEY = "AIzaSyBmMWiZSfyzlGyRGoMTZUazbAH8HOv6ESI"
+API_KEY = "AIzaSyDyALjWG3yA0tshV3InvZCRADpPcyHa_VE"
 
 def test_serra():
     print("--- SERRA BRAIN: 2.5 GENERATION ACTIVATION ---")

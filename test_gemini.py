@@ -1,26 +1,35 @@
-import google.generativeai as genai
+from google import genai
+import sys
 
+# API Key yako
 API_KEY = "AIzaSyBX_KLp0IChE2PfJBRlU30qJKpdUrZCEnI"
 
-def test_connection():
-    print("--- SERRA BRAIN RECOVERY MODE ---")
-    genai.configure(api_key=API_KEY)
+def test_modern_engine():
+    print("--- SERRA MODERN ENGINE TEST (v3) ---")
     
-    # Tunajaribu majina yote maarufu ya Gemini
-    possible_models = ['gemini-pro', 'gemini-1.5-flash', 'gemini-1.0-pro']
-    
-    for model_name in possible_models:
-        try:
-            print(f"Trying model: {model_name}...")
-            model = genai.GenerativeModel(model_name)
-            response = model.generate_content("Say 'Connected!'", generation_config={"timeout": 10})
-            print(f"\nSUCCESS! Model '{model_name}' is working.")
-            print(f"Gemini says: {response.text}")
-            return model_name
-        except Exception as e:
-            print(f"Failed with {model_name}: {e}")
-    
-    print("\n[!] Mwanangu, model zote zimekataa. Inawezekana API Key ina shida ya Quota.")
+    try:
+        # 1. Initialize Client (Muundo mpya huu)
+        client = genai.Client(api_key=API_KEY)
+        
+        print("Neural Link: Connecting to Google GenAI Servers...")
+        
+        # 2. Generate Content (Tunatumia gemini-1.5-flash ambayo ni stable zaidi kwa sasa)
+        response = client.models.generate_content(
+            model="gemini-1.5-flash", 
+            contents="Hello! Confirm you are the new Serra Brain by saying: 'New Engine Online!'"
+        )
+        
+        print("\n" + "="*40)
+        print(f"RESPONSE FROM AI: {response.text}")
+        print("="*40)
+        print("\n[SUCCESS] Injini mpya inafanya kazi bila makosa!")
+
+    except Exception as e:
+        print("\n" + "!"*40)
+        print(f"FAILURE: Kuna hitilafu imetokea.")
+        print(f"Error Details: {e}")
+        print("!"*40)
+        print("\nUshauri: Hakikisha umepiga 'pip install google-genai' na internet ipo poa.")
 
 if __name__ == "__main__":
-    test_connection()
+    test_modern_engine()

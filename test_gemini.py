@@ -1,30 +1,25 @@
 from google import genai
 
-# Hii ndio key yenyewe kutoka kwenye picha yako (Case Sensitive)
-API_KEY = "AIzaSyBmMWiZSfyzlGyRGoMTZUazbAH8HOv6ESIY"
+# WEKA KEY MPYA HAPA NDANI YA " "
+API_KEY = "PASTE_KEY_YAKO_HAPA_MOJA_KWA_MOJA"
 
 def test_serra():
     print("--- SERRA BRAIN CHECK: FINAL ATTEMPT ---")
     try:
-        # Tunatumia Client ya kisasa (SDK v3)
         client = genai.Client(api_key=API_KEY)
+        print("Mawasiliano: Inapeleka ombi...")
         
-        print("Mawasiliano: Inapeleka ombi kwa Gemini 2.0...")
-        
-        # Hapa tunatumia gemini-2.0-flash (Injini mpya kabisa ya 2026)
+        # Jaribu model ya 1.5 kama 2.0 bado haijawa active kwako
         response = client.models.generate_content(
-            model="gemini-2.0-flash", 
-            contents="Confirm your status. Use exactly five words."
+            model="gemini-1.5-flash", 
+            contents="Confirm status"
         )
 
-        print("\n" + "🚀"*10)
-        print(f"JIBU LA SERRA: {response.text.strip()}")
-        print("🚀"*10)
-        print("\nSUCCESS! Sasa tuko tayari kuwasha Serra kamili.")
+        print(f"\n🚀 JIBU: {response.text.strip()}")
+        print("\nSUCCESS! Sasa weka hii key kwenye main.py")
 
     except Exception as e:
-        print(f"\n❌ Error imetokea: {e}")
-        print("\nUshauri: Hakikisha umepiga 'pip install google-genai' kwenye CMD yako.")
+        print(f"\n❌ Bado kuna Error: {e}")
 
 if __name__ == "__main__":
     test_serra()

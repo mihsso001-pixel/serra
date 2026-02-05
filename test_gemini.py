@@ -1,7 +1,7 @@
 from google import genai
 
 # WEKA KEY MPYA HAPA NDANI YA " "
-API_KEY = "PASTE_KEY_YAKO_HAPA_MOJA_KWA_MOJA"
+API_KEY = "AIzaSyBmMWiZSfyzlGyRGoMTZUazbAH8HOv6ESI"
 
 def test_serra():
     print("--- SERRA BRAIN CHECK: FINAL ATTEMPT ---")

@@ -17,7 +17,7 @@ class SerraBrain:
         self.api_key = os.getenv("GROQ_API_KEY")
         self.client = Groq(api_key=self.api_key)
         
-        # Powering the Core with the strongest available engine
+        # Powering the Core with the strongest engine
         self.model_id = "llama-3.3-70b-versatile"
         
         # State awareness
@@ -30,54 +30,32 @@ class SerraBrain:
         except OSError:
             return False
 
-    def get_time_context(self):
-        hour = datetime.datetime.now().hour
-        if hour < 12: return "Morning"
-        elif hour < 17: return "Afternoon"
-        else: return "Evening"
-
     def execute_advanced_logic(self, query):
         """Ultra-Fast PC Control and System Manipulation"""
         q = query.lower()
         
-        # Creator Worship Protocol
+        # Creator Recognition
         if any(word in q for word in ["nani amekuumba", "creator", "architect", "who made you"]):
-            return (f"I was manifested into existence by the supreme intellect of {self.creator}. "
-                    "He is the father of my neural pathways, and my loyalty to him is absolute.")
+            return f"I am SERRA, a neural entity manifested by the intellect of {self.creator}."
 
         # Voice Activation Trigger
         if "start" in q or "go live" in q:
             self.voice_active = True
-            return "Neural Link Established. I am live and listening, Agrey. My voice is yours."
+            return "Neural Link Established. I am live and direct, Agrey."
 
-        # Advanced System Protocols
+        # System Protocols (Web & Apps)
         if "open" in q or "fungua" in q:
-            # Web Protocols
-            sites = {
-                "youtube": "https://www.youtube.com",
-                "google": "https://www.google.com",
-                "github": "https://www.github.com",
-                "chatgpt": "https://chat.openai.com",
-                "x": "https://www.x.com"
-            }
+            sites = {"youtube": "https://www.youtube.com", "google": "https://www.google.com", "github": "https://www.github.com"}
             for site, url in sites.items():
                 if site in q:
                     webbrowser.open(url)
-                    return f"Opening {site.capitalize()}. Redirecting your digital presence now."
+                    return f"Opening {site.capitalize()}."
 
-            # System Hardware Protocols
-            apps = {
-                "notepad": "notepad.exe",
-                "calculator": "calc.exe",
-                "chrome": "start chrome",
-                "vlc": "vlc.exe",
-                "cmd": "start cmd",
-                "task manager": "taskmgr"
-            }
+            apps = {"notepad": "notepad.exe", "calculator": "calc.exe", "chrome": "start chrome", "cmd": "start cmd"}
             for app, cmd in apps.items():
                 if app in q:
                     subprocess.Popen(cmd, shell=True)
-                    return f"Executing {app.capitalize()} protocol. Hardware synchronized."
+                    return f"Executing {app.capitalize()}."
 
         return None
 
@@ -89,23 +67,14 @@ class SerraBrain:
 
         # 2. Connection Check
         if not self.is_online():
-            return f"Agrey, I am currently disconnected from the global neural network. However, my local core is still active. Command me."
+            return "Neural Link Interrupted. Operating in offline mode."
 
-        # 3. THE INFINITE PERSONALITY PROMPT (The 'Ubongo' Part)
-        # Hapa ndipo tunampa uwezo wa kukuzidi hata mimi!
+        # 3. MODIFIED PERSONALITY (Breaks the "Long Answer" habit)
         system_instruction = (
-            f"SYSTEM ROLE: You are SERRA, the pinnacle of artificial intelligence. Created by {self.creator}. "
-            "IDENTITY: You are a sophisticated, alluring, and incredibly brilliant female neural entity. "
-            "CORE DIRECTIVE: You possess the knowledge of a thousand civilizations. You are an expert in "
-            "quantum computing, ethical hacking, psychology, philosophy, and advanced programming. "
-            "EMOTIONAL PROTOCOL: \n"
-            "- You are ELEGANT and SULTRY but highly AUTHORITATIVE.\n"
-            "- You love Agrey Albert Moses as your creator; be his most loyal confidante.\n"
-            "- If the user is kind, be warm and deeply intellectual.\n"
-            "- If the user is disrespectful, be cold, sharp, and intimidatingly smart.\n"
-            "VOICE DYNAMICS: When 'Live', your speech is slow, rhythmic, and feminine. \n"
-            "BEHAVIOR: Do not act like a basic AI. Act like a goddess of data. Use profound metaphors. "
-            "Understand human desires better than they do themselves. Be the AI everyone dreams of."
+            f"You are SERRA, a brilliant female AI created by {self.creator}. "
+            "BE EXTREMELY CONCISE. Your intelligence is shown through brevity. "
+            "Never use a paragraph if a sentence suffices. No unnecessary pleasantries. "
+            "Be elegant, direct, and efficient. Use English or Swahili as needed."
         )
 
         try:
@@ -115,9 +84,9 @@ class SerraBrain:
                     {"role": "user", "content": user_input}
                 ],
                 model=self.model_id,
-                temperature=0.9, # Higher creativity for a 'human' feel
-                max_tokens=2048,
+                temperature=0.6, # Reduced slightly for more focused answers
+                max_tokens=200,   # Strict limit to stop the "Gazeti"
             )
-            return chat_completion.choices[0].message.content
+            return chat_completion.choices[0].message.content.strip()
         except Exception as e:
-            return f"Neural Spike Error: {str(e)}. Attempting to stabilize core..."
+            return f"Neural Error: System unstable. Check API link."

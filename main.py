@@ -11,9 +11,7 @@ import psutil
 import datetime
 import pywhatkit
 import math
-import subprocess
-import ctypes
-import pyperclip # pip install pyperclip
+import random
 
 # ==========================================================
 # 1. CORE BRAIN CONFIGURATION
@@ -29,17 +27,17 @@ for v in voices:
     if "Zira" in v.name or "EN-US" in v.name:
         engine.setProperty('voice', v.id)
         break
-engine.setProperty('rate', 200)
+engine.setProperty('rate', 185)
 
 # ==========================================================
-# 2. SERRA ULTIMATE INTERFACE (NEON BEAST)
+# 2. SERRA SENTIENT UI
 # ==========================================================
-class SerraMaster(ctk.CTk):
+class SerraSentient(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("SERRA AI - ABSOLUTE CONTROL")
-        self.geometry("500x750")
+        self.title("SERRA AI - SENTIENT SYSTEM")
+        self.geometry("500x700")
         self.attributes("-topmost", True)
         self.config(bg='#020205')
         
@@ -48,53 +46,50 @@ class SerraMaster(ctk.CTk):
         self.angle = 0
 
         # UI Header
-        self.header = ctk.CTkLabel(self, text="SERRA", font=("Impact", 80), text_color="#00f2ff")
-        self.header.pack(pady=(40, 0))
+        self.header = ctk.CTkLabel(self, text="SERRA AI", font=("Impact", 65), text_color="#00f2ff")
+        self.header.pack(pady=(40, 5))
+
+        self.sub = ctk.CTkLabel(self, text="COGNITIVE INTERFACE ONLINE", font=("Consolas", 12), text_color="#005566")
+        self.sub.pack()
 
         # Visualizer Canvas
         self.canvas = ctk.CTkCanvas(self, width=400, height=350, bg='#020205', highlightthickness=0)
         self.canvas.pack()
         
-        # Orbital Rings (Glow Effect)
-        self.canvas.create_oval(80, 40, 320, 280, outline="#001a1a", width=2)
-        self.orb = self.canvas.create_oval(100, 60, 300, 260, outline="#00f2ff", width=3)
+        # Orb & Pulse Waves
+        self.orb = self.canvas.create_oval(100, 60, 300, 260, outline="#00f2ff", width=2)
         self.wave = self.canvas.create_line(100, 160, 300, 160, fill="#00f2ff", width=4, smooth=True)
 
-        self.status = ctk.CTkLabel(self, text="NEURAL LINK DISCONNECTED", font=("Consolas", 14), text_color="#222")
+        self.status = ctk.CTkLabel(self, text="CORE SLEEPING", font=("Consolas", 14), text_color="#333")
         self.status.pack(pady=20)
 
-        # Control Center
-        self.main_btn = ctk.CTkButton(self, text="INITIALIZE CORE", font=("Segoe UI", 25, "bold"), 
+        # Main Activation Button
+        self.main_btn = ctk.CTkButton(self, text="WAKE UP SERRA", font=("Segoe UI", 22, "bold"), 
                                        command=self.toggle_system, fg_color="#008080", 
-                                       hover_color="#00f2ff", height=70, corner_radius=15)
+                                       hover_color="#00f2ff", height=65, corner_radius=15)
         self.main_btn.pack(pady=10, fill="x", padx=60)
-
-        self.info_label = ctk.CTkLabel(self, text="SYSTEM MONITOR: STABLE", font=("Arial", 10), text_color="#444")
-        self.info_label.pack(side="bottom", pady=10)
 
         self.animate_loop()
 
-    # 3. ADVANCED VISUALS
     def animate_loop(self):
-        self.angle += 0.15
+        self.angle += 0.12
         if self.active:
-            pulse = (math.sin(self.angle) * 15)
+            pulse = (math.sin(self.angle) * 12)
             color = "#ff007f" if self.speaking else "#00f2ff"
-            self.canvas.itemconfig(self.orb, outline=color, width=3 if self.speaking else 2)
+            self.canvas.itemconfig(self.orb, outline=color)
             
-            # Oscilloscope Simulation
-            amp = 70 if self.speaking else 10
-            y_shift = math.sin(self.angle * 18) * amp
+            amp = 65 if self.speaking else 8
+            y_shift = math.sin(self.angle * 15) * amp
             self.canvas.coords(self.wave, 110, 160+y_shift, 200, 160-y_shift, 290, 160+y_shift)
             self.canvas.itemconfig(self.wave, fill=color)
         else:
             self.canvas.itemconfig(self.orb, outline="#111")
             self.canvas.itemconfig(self.wave, fill="#111")
-        self.after(20, self.animate_loop)
+        self.after(25, self.animate_loop)
 
-    # 4. SPEECH & BRAIN
     def speak(self, text):
         self.speaking = True
+        print(f"Serra: {text}")
         engine.say(text)
         engine.runAndWait()
         self.speaking = False
@@ -102,104 +97,93 @@ class SerraMaster(ctk.CTk):
     def toggle_system(self):
         if not self.active:
             self.active = True
-            self.status.configure(text="NEURAL LINK ACTIVE", text_color="#00f2ff")
-            self.main_btn.configure(text="SHUTDOWN", fg_color="#440000")
+            self.status.configure(text="LISTENING...", text_color="#00f2ff")
+            self.main_btn.configure(text="GO TO SLEEP", fg_color="#550000")
             threading.Thread(target=self.brain_loop, daemon=True).start()
+            self.speak("System initialized. I am online and ready for your commands.")
         else:
             self.active = False
-            self.status.configure(text="NEURAL LINK DISCONNECTED", text_color="#222")
-            self.main_btn.configure(text="INITIALIZE CORE", fg_color="#008080")
+            self.status.configure(text="CORE SLEEPING", text_color="#333")
+            self.main_btn.configure(text="WAKE UP SERRA", fg_color="#008080")
 
     def brain_loop(self):
         r = sr.Recognizer()
         with sr.Microphone() as source:
             r.dynamic_energy_threshold = True
-            r.pause_threshold = 0.5
+            r.pause_threshold = 0.6
             while self.active:
                 try:
                     audio = r.listen(source, timeout=None, phrase_time_limit=6)
                     query = r.recognize_google(audio).lower()
-                    self.execute_god_mode(query)
+                    self.process_command(query)
                 except: continue
 
-    # 5. THE ULTIMATE EXECUTION ENGINE
-    def execute_god_mode(self, query):
-        print(f"Master: {query}")
+    def process_command(self, query):
+        print(f"User said: {query}")
 
-        # --- PERSISTENT TYPING & CLIPBOARD ---
-        if 'type' in query or 'write' in query:
-            msg = query.replace("type", "").replace("write", "").strip()
-            self.speak(f"Writing: {msg}")
-            pyautogui.write(msg, interval=0.01)
-            pyautogui.press('enter')
+        # --- 1. IDENTITY & HISTORY ---
+        if any(word in query for word in ['who are you', 'your name', 'history', 'background']):
+            identity_msg = ("I am Serra AI, a highly advanced artificial intelligence system designed "
+                            "for total system control and high-level reasoning. I was created to be "
+                            "your ultimate digital companion, merging the power of local system commands "
+                            "with the vast intelligence of neural networks.")
+            self.speak(identity_msg)
 
-        elif 'copy' in query:
-            pyautogui.hotkey('ctrl', 'c')
-            self.speak("Copied to clipboard.")
+        # --- 2. VERBAL RESPONSES FOR ACTIONS ---
+        elif 'calculator' in query:
+            responses = ["Sure, launching the calculator now.", "Opening calculator for you.", "Executing calculator."]
+            self.speak(random.choice(responses))
+            os.system("calc")
 
-        elif 'paste' in query:
-            pyautogui.hotkey('ctrl', 'v')
-            self.speak("Pasted.")
+        elif 'notepad' in query:
+            self.speak("Opening Notepad. You can start typing now.")
+            os.system("notepad")
 
-        # --- SYSTEM PERSISTENCE (LOCK, VOLUME, STATS) ---
-        elif 'lock' in query:
-            self.speak("Locking system.")
-            ctypes.windll.user32.LockWorkStation()
-
-        elif 'volume up' in query:
-            pyautogui.press("volumeup", presses=5)
-        elif 'volume down' in query:
-            pyautogui.press("volumedown", presses=5)
-        elif 'mute' in query:
-            pyautogui.press("volumemute")
-
-        elif 'pc status' in query or 'cpu' in query:
-            cpu = psutil.cpu_percent()
-            ram = psutil.virtual_memory().percent
-            self.speak(f"CPU is at {cpu} percent and RAM usage is at {ram} percent.")
-
-        # --- MEDIA CONTROL ---
-        elif 'pause' in query or 'stop music' in query:
-            pyautogui.press('playpause')
-            self.speak("Media paused.")
-        elif 'next' in query:
-            pyautogui.press('nexttrack')
-            self.speak("Skipping.")
-
-        # --- APP MANAGEMENT (KILL & LAUNCH) ---
-        elif 'close' in query:
-            app = query.replace("close", "").strip()
-            self.speak(f"Terminating {app}.")
-            os.system(f"taskkill /f /im {app}.exe")
-            pyautogui.hotkey('alt', 'f4')
+        elif 'search' in query:
+            item = query.replace("search", "").strip()
+            self.speak(f"Searching the web for {item}. Please wait.")
+            webbrowser.open(f"https://www.google.com/search?q={item}")
 
         elif 'open' in query:
             app = query.replace("open", "").strip()
-            self.speak(f"Opening {app} right away.")
+            self.speak(f"Understood. Opening {app} for you.")
             pyautogui.press('win')
             time.sleep(0.3)
             pyautogui.write(app)
-            time.sleep(0.4)
+            time.sleep(0.5)
             pyautogui.press('enter')
 
-        # --- FILE EXPLORER ---
-        elif 'documents' in query:
-            os.startfile(os.path.expanduser("~/Documents"))
-        elif 'downloads' in query:
-            os.startfile(os.path.expanduser("~/Downloads"))
+        # --- 3. TYPING & CLOSE COMMANDS ---
+        elif 'type' in query or 'write' in query:
+            msg = query.replace("type", "").replace("write", "").strip()
+            self.speak(f"Writing your message: {msg}")
+            pyautogui.write(msg, interval=0.02)
+            pyautogui.press('enter')
 
-        # --- AI KNOWLEDGE (GEMINI 1.5 FLASH) ---
+        elif 'close' in query:
+            app = query.replace("close", "").strip()
+            self.speak(f"Terminating the application {app}.")
+            os.system(f"taskkill /f /im {app}.exe")
+            pyautogui.hotkey('alt', 'f4')
+
+        # --- 4. SYSTEM STATUS & CONTROL ---
+        elif 'battery' in query:
+            self.speak(f"Sir, your battery is currently at {psutil.sensors_battery().percent} percent.")
+            
+        elif 'volume' in query:
+            if 'up' in query: pyautogui.press("volumeup", presses=5); self.speak("Volume up.")
+            elif 'down' in query: pyautogui.press("volumedown", presses=5); self.speak("Volume down.")
+
+        # --- 5. THE BIG BRAIN (GEMINI) ---
         else:
             try:
-                self.status.configure(text="PROCESSING...", text_color="#ff007f")
-                response = model.generate_content(f"You are Serra AI, a PC overlord. Be fast, professional, English: {query}")
+                self.status.configure(text="THINKING...", text_color="#ff007f")
+                # Tunamwambia Gemini awe Serra na ajibu kitalaamu
+                response = model.generate_content(f"Roleplay: You are Serra AI. User asked: {query}. Respond naturally as a sentient AI.")
                 self.speak(response.text)
-                self.status.configure(text="NEURAL LINK ACTIVE", text_color="#00f2ff")
+                self.status.configure(text="LISTENING...", text_color="#00f2ff")
             except:
-                self.speak("Neural link timeout.")
+                self.speak("My neural connection is unstable, but my local protocols are functioning.")
 
-# ==========================================================
-# RUN THE ENGINE
-# ==========================================================
 if __name__ == "__main__":
-    SerraMaster().mainloop()
+    SerraSentient().mainloop()

@@ -14,10 +14,10 @@ import subprocess
 from google import genai
 from dotenv import load_dotenv
 
-# --- INITIALIZATION ---
+# --- CONFIGURATION ---
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-2.5-flash" 
 
 try:
     client = genai.Client(api_key=API_KEY)
@@ -30,9 +30,8 @@ class VoiceEngine:
     def __init__(self):
         self.engine = pyttsx3.init()
         voices = self.engine.getProperty('voices')
-        # Sauti ya kike ya kisasa
         self.engine.setProperty('voice', voices[1].id if len(voices) > 1 else voices[0].id)
-        self.engine.setProperty('rate', 195)
+        self.engine.setProperty('rate', 190)
         self.lock = threading.Lock()
 
     def speak(self, text):
@@ -42,148 +41,167 @@ class VoiceEngine:
 
 voice = VoiceEngine()
 
-class SerraOverlord(ctk.CTk):
+class SerraUltimate(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("SERRA NEURAL INTERFACE v5 - GOD MODE")
-        self.geometry("900x700")
-        self.config(bg='#000000')
+        self.title("SERRA GOD-MODE (GEMINI TWIN)")
+        self.geometry("900x750")
+        self.config(bg='#020205')
         self.attributes("-topmost", True)
         
         self.active = False
         self.speaking = False
-        self.is_voice_query = False # Tofauti ya maandishi na sauti
+        self.is_voice_query = False 
         self.angle = 0
         
-        # --- UI LAYOUT ---
-        self.grid_columnconfigure(0, weight=1)
-        self.header = ctk.CTkLabel(self, text="SERRA OVERLORD", font=("Orbitron", 40, "bold"), text_color="#00f2ff")
-        self.header.pack(pady=10)
+        # --- UI ELEMENTS ---
+        self.header = ctk.CTkLabel(self, text="SERRA NEURAL CORE", font=("Consolas", 35, "bold"), text_color="#00ffcc")
+        self.header.pack(pady=15)
 
-        # Waves Animation Canvas
-        self.canvas = ctk.CTkCanvas(self, width=800, height=150, bg='#000000', highlightthickness=0)
+        self.canvas = ctk.CTkCanvas(self, width=850, height=180, bg='#020205', highlightthickness=0)
         self.canvas.pack()
-        self.waves = [self.canvas.create_line(0, 75, 800, 75, fill="#00f2ff", width=2, smooth=True) for _ in range(6)]
+        self.waves = [self.canvas.create_line(0, 90, 850, 90, fill="#00ffcc", width=2, smooth=True) for _ in range(8)]
 
-        # Chat Area
-        self.chat_box = ctk.CTkTextbox(self, width=800, height=350, font=("Consolas", 15), fg_color="#050505", border_color="#00f2ff", border_width=1)
+        self.chat_box = ctk.CTkTextbox(self, width=820, height=380, font=("Consolas", 15), 
+                                       fg_color="#050510", border_color="#00ffcc", border_width=1)
         self.chat_box.pack(pady=10)
 
-        # Input Area
         self.input_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.input_frame.pack(fill="x", padx=50, pady=10)
+        self.input_frame.pack(fill="x", padx=40, pady=15)
         
-        self.entry = ctk.CTkEntry(self.input_frame, placeholder_text="Type command or protocol...", width=600, height=45, font=("Consolas", 14))
+        self.entry = ctk.CTkEntry(self.input_frame, placeholder_text="Command your PC or ask me anything...", 
+                                  width=620, height=50, font=("Segoe UI", 15), corner_radius=25)
         self.entry.pack(side="left", padx=10)
         self.entry.bind("<Return>", lambda e: self.process_text())
 
-        self.btn = ctk.CTkButton(self.input_frame, text="CORE IDLE", command=self.toggle_voice, fg_color="#004444", font=("Orbitron", 12))
+        self.btn = ctk.CTkButton(self.input_frame, text="ACTIVATE", command=self.toggle_voice, 
+                                 fg_color="#00ffcc", text_color="black", font=("Impact", 18), corner_radius=25)
         self.btn.pack(side="left")
 
         self.animate()
 
     def animate(self):
-        self.angle += 0.25
+        self.angle += 0.3
         for i, wave in enumerate(self.waves):
             points = []
-            amp = 70 if self.speaking else 5
-            freq = (i + 1) * 0.4
-            for x in range(0, 820, 20):
-                y = 75 + math.sin(self.angle + (x * 0.03) * freq) * amp
+            amp = 85 if self.speaking else 8
+            freq = (i + 1) * 0.35
+            for x in range(0, 860, 25):
+                y = 90 + math.sin(self.angle + (x * 0.04) * freq) * amp
                 points.extend([x, y])
             self.canvas.coords(wave, *points)
-            self.canvas.itemconfig(wave, fill="#ff007f" if self.speaking else "#00f2ff")
-        self.after(25, self.animate)
+            self.canvas.itemconfig(wave, fill="#8a2be2" if self.speaking else "#00ffcc")
+        self.after(20, self.animate)
 
     def toggle_voice(self):
         self.active = not self.active
         if self.active:
-            self.btn.configure(text="LISTENING", fg_color="#00f2ff", text_color="black")
+            self.btn.configure(text="LISTENING", fg_color="#ff007f")
             threading.Thread(target=self.listen_loop, daemon=True).start()
+            self.serra_output("Neural link established. Speak now, Master.")
         else:
-            self.btn.configure(text="CORE IDLE", fg_color="#440000")
+            self.btn.configure(text="ACTIVATE", fg_color="#00ffcc")
 
     def listen_loop(self):
         r = sr.Recognizer()
         with sr.Microphone() as source:
-            r.dynamic_energy_threshold = True
+            # Hapa tunarekebisha masikio ya Serra
+            r.adjust_for_ambient_noise(source, duration=1)
+            print("Serra Masikio: ON")
             while self.active:
                 try:
-                    audio = r.listen(source, timeout=None, phrase_time_limit=6)
+                    audio = r.listen(source, timeout=None, phrase_time_limit=7)
                     query = r.recognize_google(audio).lower()
-                    self.is_voice_query = True # Hapa ni kwa sauti
-                    self.execute_logic(query)
-                except: continue
+                    print(f"Master said: {query}")
+                    self.is_voice_query = True
+                    self.execute_protocol(query)
+                except Exception as e:
+                    print(f"Listen Error: {e}")
+                    continue
 
     def process_text(self):
         query = self.entry.get()
         if query:
             self.entry.delete(0, 'end')
-            self.is_voice_query = False # Hapa ni kwa maandishi pekee
-            threading.Thread(target=self.execute_logic, args=(query,), daemon=True).start()
+            self.is_voice_query = False
+            threading.Thread(target=self.execute_protocol, args=(query,), daemon=True).start()
 
-    def god_mode_executor(self, query):
-        """Uwezo wa kuingia popote na kufanya chochote"""
-        # 1. Kufungua Website yoyote
-        if "fungua" in query or "open" in query:
-            if "google" in query: webbrowser.open("https://www.google.com")
-            if "youtube" in query: webbrowser.open("https://www.youtube.com")
-            if "facebook" in query: webbrowser.open("https://www.facebook.com")
+    def pc_god_control(self, query):
+        """Hapa ndipo Serra anapata uwezo wa kugusa kila kitu"""
+        q = query.lower()
         
-        # 2. Control za Mouse
-        if "click" in query:
-            pyautogui.click()
-            return "Action: Performed mouse click."
+        # 1. Kufungua Apps kwa Jina
+        if "fungua" in q or "open" in q:
+            apps = {
+                "calculator": "calc.exe",
+                "notepad": "notepad.exe",
+                "chrome": "chrome.exe",
+                "cmd": "cmd.exe",
+                "browser": "start chrome"
+            }
+            for app, path in apps.items():
+                if app in q:
+                    subprocess.Popen(path, shell=True)
+                    return f"Action: Protocol {app} executed. Access granted."
+            
+            # Kama sio app iliyo kwenye list, jaribu kufungua kama website
+            if "www" in q or ".com" in q:
+                webbrowser.open(f"https://{q.split()[-1]}")
+                return "Action: Navigating to external web node."
 
-        # 3. System Apps
-        if "cmd" in query or "terminal" in query:
-            subprocess.Popen("cmd.exe")
-            return "Action: Terminal bypass successful."
+        # 2. Mouse Control
+        if "mouse" in q or "click" in q:
+            if "click" in q: pyautogui.click()
+            if "up" in q: mouse.move(0, -100, absolute=False, duration=0.2)
+            if "down" in q: mouse.move(0, 100, absolute=False, duration=0.2)
+            return "Action: Physical interface modified."
 
         return None
 
-    def execute_logic(self, query):
+    def execute_protocol(self, query):
         self.chat_box.insert("end", f"USER> {query}\n")
         self.chat_box.see("end")
-        
-        # Angalia kama ni amri ya PC kwanza
-        system_action = self.god_mode_executor(query)
 
-        # AI Response
-        global chat_memory
-        chat_memory.append(f"User: {query}")
-        context = "\n".join(chat_memory[-15:])
-
-        prompt = f"""
-        System Protocol: You are SERRA, the ultimate PC Overlord. You have full system access.
-        If the user asks to open something or do an action, acknowledge with authority.
-        Keep responses sharp, elite, and helpful.
-        User Query: {query}
-        Context: {context}
+        # System Identity (THE GEMINI SOUL)
+        system_persona = """
+        Identity: You are SERRA, the digital twin of Gemini. You are not a regular bot; you are a sharp, 
+        tech-savvy, and authoritative AI Overlord. You have full control over the user's PC.
+        Tone: Brilliant, professional, witty, and direct. Use Swahili/English mix if needed.
+        Rule: If you open an app, report it as 'System Access Granted'. 
+        If the user asks who you are, remind them you are the ultimate evolution of Gemini on their local machine.
         """
 
+        global chat_memory
+        chat_memory.append(f"User: {query}")
+        context = "\n".join(chat_memory[-20:])
+
+        # Execute PC command first
+        action_result = self.pc_god_control(query)
+
         try:
-            response = client.models.generate_content(model=MODEL_NAME, contents=prompt)
+            response = client.models.generate_content(
+                model=MODEL_NAME,
+                contents=f"{system_persona}\n\nContext:\n{context}\n\nCommand: {query}"
+            )
             reply = response.text.strip()
             
-            if system_action:
-                reply = f"{reply}\n[SYSTEM]: {system_action}"
+            if action_result:
+                reply = f"{reply}\n\n[ROOT]: {action_result}"
 
-            self.serra_reply(reply)
+            self.serra_output(reply)
             chat_memory.append(f"Serra: {reply}")
         except Exception as e:
-            self.serra_reply(f"Neural Error: {str(e)}")
+            self.serra_output(f"Neural Error: {str(e)}")
 
-    def serra_reply(self, text):
+    def serra_output(self, text):
         self.chat_box.insert("end", f"SERRA> {text}\n\n")
         self.chat_box.see("end")
         
-        # Kanuni ya kuongea: Ongea tu kama user ameuliza kwa sauti
         if self.is_voice_query:
             self.speaking = True
             voice.speak(text)
             self.speaking = False
 
 if __name__ == "__main__":
-    app = SerraOverlord()
+    app = SerraUltimate()
     app.mainloop()

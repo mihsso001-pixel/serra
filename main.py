@@ -11,175 +11,183 @@ import psutil
 import datetime
 import pywhatkit
 import math
+import sys
 
-# --- CONFIGURATION YA AI ---
+# ==========================================================
+# 1. CORE CONFIGURATION
+# ==========================================================
 API_KEY = "AIzaSyBNHMWT6TH1J6xsiRCA-2X96wwSkZWmZUI"
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# --- SETUP SAUTI YA SERRA ---
+# Initialize Voice Engine
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
-for voice in voices:
-    if "Zira" in voice.name or "Female" in voice.name:
-        engine.setProperty('voice', voice.id)
+# Set to English Female (Zira or similar)
+for v in voices:
+    if "Zira" in v.name or "Female" in v.name or "EN-US" in v.name:
+        engine.setProperty('voice', v.id)
         break
-engine.setProperty('rate', 170)
+engine.setProperty('rate', 185) # Pro speed
 
-class SerraUltimateApp(ctk.CTk):
+# ==========================================================
+# 2. UI DESIGN (SERRA PRO INTERFACE)
+# ==========================================================
+class SerraUltimate(ctk.CTk):
     def __init__(self):
         super().__init__()
-
-        # Muundo wa Dirisha
-        self.title("Serra AI - Intelligent System")
+        self.title("SERRA AI - ULTIMATE CORE")
         self.geometry("450x650")
         self.attributes("-topmost", True)
-        self.config(bg='#050508') # Black-Blue Deep Theme
+        self.config(bg='#020205')
         
-        # Variables
         self.active = False
         self.speaking = False
-        self.listening = False
         self.angle = 0
 
-        # --- UI ELEMENTS ---
-        self.header = ctk.CTkLabel(self, text="SERRA AI", font=("Impact", 40), text_color="#00f2ff")
-        self.header.pack(pady=(30, 5))
+        # Header
+        self.header = ctk.CTkLabel(self, text="SERRA AI", font=("Impact", 55), text_color="#00f2ff")
+        self.header.pack(pady=(30, 0))
 
-        self.sub_text = ctk.CTkLabel(self, text="PREMIUM ASSISTANT SYSTEM", font=("Segoe UI", 12), text_color="#336677")
-        self.sub_text.pack(pady=(0, 20))
+        self.sub = ctk.CTkLabel(self, text="ACTIVE NEURAL LINK", font=("Consolas", 12), text_color="#005566")
+        self.sub.pack(pady=(0, 20))
 
-        # Canvas kwa ajili ya 3D Orb
-        self.canvas = ctk.CTkCanvas(self, width=300, height=300, bg='#050508', highlightthickness=0)
-        self.canvas.pack(pady=10)
+        # 3. THE 3D ANIMATED ORB CANVAS
+        self.canvas = ctk.CTkCanvas(self, width=320, height=320, bg='#020205', highlightthickness=0)
+        self.canvas.pack()
         
-        self.create_orb_elements()
-        
-        self.status_label = ctk.CTkLabel(self, text="SYSTEM IDLE", font=("Consolas", 14), text_color="#555555")
-        self.status_label.pack(pady=10)
+        # Orbital Rings & Core Wave
+        self.ring = self.canvas.create_oval(60, 60, 260, 260, outline="#003344", width=1)
+        self.orb = self.canvas.create_oval(80, 80, 240, 240, outline="#00f2ff", width=3)
+        self.wave = self.canvas.create_line(80, 160, 240, 160, fill="#00f2ff", width=2, smooth=True)
 
-        # Buttons (Modern Style)
-        self.btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.btn_frame.pack(pady=20, fill="x", padx=50)
+        self.status = ctk.CTkLabel(self, text="STATUS: STANDBY", font=("Consolas", 16), text_color="#444")
+        self.status.pack(pady=20)
 
-        self.start_btn = ctk.CTkButton(self.btn_frame, text="INITIALIZE SERRA", font=("Segoe UI", 18, "bold"), 
-                                       command=self.start_system, fg_color="#008080", hover_color="#00aaaa", 
-                                       height=50, corner_radius=25)
-        self.start_btn.pack(pady=10, fill="x")
+        # Control Buttons
+        self.action_btn = ctk.CTkButton(self, text="INITIALIZE CORE", font=("Segoe UI", 20, "bold"), 
+                                        command=self.toggle_system, fg_color="#008080", 
+                                        hover_color="#00aaaa", height=55, corner_radius=15)
+        self.action_btn.pack(pady=10, fill="x", padx=60)
 
-        self.stop_btn = ctk.CTkButton(self.btn_frame, text="TERMINATE", command=self.stop_system, 
-                                      fg_color="#330000", hover_color="#880000", height=40, corner_radius=20)
-        self.stop_btn.pack(pady=5, fill="x")
+        self.exit_btn = ctk.CTkButton(self, text="EXIT SYSTEM", command=sys.exit, 
+                                      fg_color="transparent", text_color="red", hover_color="#220000")
+        self.exit_btn.pack(pady=5)
 
-        # Start Animation
-        self.animate_elements()
+        self.animate_loop()
 
-    def create_orb_elements(self):
-        # Glow Effect
-        self.aura = self.canvas.create_oval(50, 50, 250, 250, outline="#002233", width=1)
-        # Inner 3D Orb
-        self.orb_outer = self.canvas.create_oval(70, 70, 230, 230, fill="#080808", outline="#00f2ff", width=2)
-        # Wave Core
-        self.wave_line = self.canvas.create_line(70, 150, 230, 150, fill="#00f2ff", width=2, smooth=True)
-
-    def animate_elements(self):
-        self.angle += 0.05
-        pulse = (math.sin(self.angle) * 8)
-        
+    # ==========================================================
+    # 4. ANIMATION LOGIC (Visual Feedback)
+    # ==========================================================
+    def animate_loop(self):
+        self.angle += 0.07
         if self.active:
-            # Rangi zinabadilika kulingana na Status
-            if self.speaking:
-                color = "#ff007f" # Magenta (Anajibu)
-                status = "SERRA IS SPEAKING..."
-            elif self.listening:
-                color = "#00f2ff" # Cyan (Anasikiliza)
-                status = "SERRA IS LISTENING..."
-            else:
-                color = "#00f2ff"
-                status = "SYSTEM ACTIVE"
-
-            self.status_label.configure(text=status, text_color=color)
+            pulse = (math.sin(self.angle) * 12)
+            color = "#ff007f" if self.speaking else "#00f2ff"
             
-            # Orb Animation
-            self.canvas.coords(self.orb_outer, 70-pulse, 70-pulse, 230+pulse, 230+pulse)
-            self.canvas.itemconfig(self.orb_outer, outline=color)
+            # Orbit Pulse
+            self.canvas.coords(self.orb, 80-pulse, 80-pulse, 240+pulse, 240+pulse)
+            self.canvas.itemconfig(self.orb, outline=color)
             
-            # Oscilloscope Wave Animation
-            y_shift = math.sin(self.angle * 8) * (25 if self.speaking else 5)
-            self.canvas.coords(self.wave_line, 80, 150+y_shift, 150, 150-y_shift, 220, 150+y_shift)
-            self.canvas.itemconfig(self.wave_line, fill=color)
+            # Oscilloscope Wave logic
+            y_shift = math.sin(self.angle * 10) * (40 if self.speaking else 10)
+            self.canvas.coords(self.wave, 90, 160+y_shift, 160, 160-y_shift, 230, 160+y_shift)
+            self.canvas.itemconfig(self.wave, fill=color)
         else:
-            self.canvas.itemconfig(self.orb_outer, outline="#222222")
-            self.status_label.configure(text="SYSTEM IDLE", text_color="#444444")
-            self.canvas.coords(self.wave_line, 80, 150, 150, 150, 220, 150) # Flatten wave
+            self.canvas.itemconfig(self.orb, outline="#111")
+            self.canvas.itemconfig(self.wave, fill="#111")
+            
+        self.after(30, self.animate_loop)
 
-        self.after(30, self.animate_elements)
-
-    def speak_text(self, text):
+    # ==========================================================
+    # 5. BRAIN & SPEECH LOGIC
+    # ==========================================================
+    def speak(self, text):
         self.speaking = True
         engine.say(text)
         engine.runAndWait()
         self.speaking = False
 
-    def start_system(self):
+    def toggle_system(self):
         if not self.active:
             self.active = True
-            threading.Thread(target=self.main_loop, daemon=True).start()
+            self.status.configure(text="STATUS: LISTENING", text_color="#00f2ff")
+            self.action_btn.configure(text="KILL SYSTEM", fg_color="#550000")
+            threading.Thread(target=self.listener_thread, daemon=True).start()
+        else:
+            self.active = False
+            self.status.configure(text="STATUS: STANDBY", text_color="#444")
+            self.action_btn.configure(text="INITIALIZE CORE", fg_color="#008080")
 
-    def stop_system(self):
-        self.active = False
-
-    def main_loop(self):
+    def listener_thread(self):
         r = sr.Recognizer()
         with sr.Microphone() as source:
+            r.adjust_for_ambient_noise(source, duration=0.7)
             while self.active:
-                self.listening = True
-                r.adjust_for_ambient_noise(source, duration=0.8)
                 try:
-                    audio = r.listen(source, timeout=5, phrase_time_limit=6)
-                    self.listening = False
+                    audio = r.listen(source, timeout=None, phrase_time_limit=5)
                     query = r.recognize_google(audio).lower()
-                    print(f"User: {query}")
-                    self.process_command(query)
-                except:
-                    self.listening = False
-                    continue
+                    self.execute_command(query)
+                except: continue
 
-    def process_command(self, query):
-        # 1. IDENTITY & SYSTEM INFO
-        if 'name' in query or 'who are you' in query:
-            self.speak_text("I am Serra AI, your premium intelligence system. I am glad to be back.")
+    # ==========================================================
+    # 6. ACTION EXECUTION (The Real Deal)
+    # ==========================================================
+    def execute_command(self, query):
+        print(f"Command Received: {query}")
+        
+        # A. Identity
+        if 'who are you' in query or 'your name' in query:
+            self.speak("I am Serra. Your high-performance AI assistant.")
 
-        elif 'battery' in query:
-            batt = psutil.sensors_battery()
-            self.speak_text(f"Boss, your battery is currently at {batt.percent} percent.")
+        # B. PC Operations
+        elif 'calculator' in query:
+            self.speak("Opening Calculator now.")
+            os.system("calc")
+
+        elif 'notepad' in query:
+            self.speak("Right away. Opening Notepad.")
+            os.system("notepad")
+
+        elif 'chrome' in query or 'google' in query:
+            self.speak("Launching Chrome browser.")
+            webbrowser.open("https://www.google.com")
+
+        elif 'youtube' in query and 'play' not in query:
+            self.speak("Navigating to YouTube.")
+            webbrowser.open("https://www.youtube.com")
 
         elif 'time' in query:
-            time_now = datetime.datetime.now().strftime("%I:%M %p")
-            self.speak_text(f"The current time is {time_now}")
+            now = datetime.datetime.now().strftime("%I:%M %p")
+            self.speak(f"The current time is {now}")
 
-        # 2. MEDIA & INTERNET
+        elif 'battery' in query:
+            pct = psutil.sensors_battery().percent
+            self.speak(f"The system battery is at {pct} percent.")
+
         elif 'play' in query:
-            song = query.replace("play", "")
-            self.speak_text(f"Searching for {song} on YouTube.")
+            song = query.replace("play", "").strip()
+            self.speak(f"Streaming {song} on YouTube.")
             pywhatkit.playonyt(song)
+        
+        elif 'screenshot' in query:
+            self.speak("Screen captured successfully.")
+            pyautogui.screenshot(f"SerraShot_{int(time.time())}.png")
 
-        elif 'open' in query:
-            app = query.replace("open", "").strip()
-            self.speak_text(f"Launching {app}")
-            pyautogui.press('win')
-            time.sleep(0.4)
-            pyautogui.write(app)
-            pyautogui.press('enter')
-
-        # 3. AI REASONING (GEMINI)
+        # C. General Knowledge (Gemini)
         else:
+            self.status.configure(text="STATUS: PROCESSING", text_color="#ff007f")
             try:
-                response = model.generate_content(f"Your name is Serra AI. Answer briefly: {query}")
-                self.speak_text(response.text)
-            except:
-                self.speak_text("My neural link is weak, but my local protocols are online.")
+                # Direct English response
+                response = model.generate_content(f"You are Serra AI. Be pro, be brief, and answer in English: {query}")
+                self.speak(response.text)
+                self.status.configure(text="STATUS: LISTENING", text_color="#00f2ff")
+            except Exception as e:
+                self.speak("Connection error. Please check your network.")
 
+# ==========================================================
+# 7. MAIN EXECUTION
+# ==========================================================
 if __name__ == "__main__":
-    app = SerraUltimateApp()
+    app = SerraUltimate()
     app.mainloop()

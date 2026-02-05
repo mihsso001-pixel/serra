@@ -1,32 +1,21 @@
 from google import genai
-import os
 
-# Weka API Key yako mpya hapa (Ihakiki haina space mwanzo wala mwisho)
+# WEKA KEY YAKO MPYA HAPA (Siri yako!)
 API_KEY = "AIzaSyBmMWiZSfyzlGyRGoMTZUazbAH8HOv6ESI"
 
 def test_serra():
-    print("--- SERRA BRAIN: FORCE V2 CONNECTION ---")
+    print("--- SERRA BRAIN: FINAL RECOVERY ---")
     try:
-        # Tunalazimisha kutumia engine mpya
         client = genai.Client(api_key=API_KEY)
-        
-        print("Mawasiliano: Inajaribu Pulse ya Gemini 2.0...")
-        
-        # Muhimu: Tunatumia jina fupi tu 'gemini-2.0-flash'
+        # Force v2 by using short name
         response = client.models.generate_content(
-            model="gemini-2.0-flash", 
-            contents="Confirm system check."
+            model="gemini-1.5-flash", 
+            contents="Confirm system is online."
         )
-
-        print("\n" + "🔥"*10)
-        print(f"JIBU KUTOKA SERRA: {response.text.strip()}")
-        print("🔥"*10)
-        print("\nSUCCESS! Mchawi kashindwa. Injini imewaka!")
-
+        print(f"\n🚀 JIBU: {response.text.strip()}")
+        print("\n[SUCCESS] Serra is back online!")
     except Exception as e:
-        print(f"\n❌ Bado inadunda: {e}")
-        print("\nUshauri wa mwisho: Jaribu kutumia 'gemini-1.5-flash' hapo juu")
-        print("kama 'gemini-2.0-flash' haijawa active kwenye akaunti yako.")
+        print(f"\n❌ Error: {e}")
 
 if __name__ == "__main__":
     test_serra()

@@ -1,16 +1,20 @@
 import customtkinter as ctk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import threading
 import os
 import speech_recognition as sr
+import pyttsx3
 
 class SerraInterface(ctk.CTk):
     def __init__(self, brain):
         super().__init__()
         self.brain = brain
         self.title("SERRA")
-        self.geometry("1100x800")
-        self.configure(fg_color="#131314") # Gemini Background
+        self.geometry("1100x850")
+        self.configure(fg_color="#131314")
+
+        # Voice Engine
+        self.speaker = pyttsx3.init()
 
         # Layout
         self.grid_columnconfigure(1, weight=1)
@@ -20,12 +24,13 @@ class SerraInterface(ctk.CTk):
         self.sidebar = ctk.CTkFrame(self, width=280, corner_radius=0, fg_color="#1e1f20")
         self.sidebar.grid(row=0, column=0, sticky="nsew")
         
-        self.new_chat_btn = ctk.CTkButton(self.sidebar, text="+ New Chat", corner_radius=25, 
-                                          fg_color="#303132", hover_color="#3c3d3e", 
-                                          height=45, command=self.clear_chat)
-        self.new_chat_btn.pack(pady=30, padx=20)
+        self.new_btn = ctk.CTkButton(self.sidebar, text="+ New Chat", corner_radius=25, 
+                                     fg_color="#303132", height=45, command=self.clear_chat)
+        self.new_btn.pack(pady=30, padx=20)
         
-        ctk.CTkLabel(self.sidebar, text="Recent History", text_color="#9aa0a6").pack(pady=10, padx=20, anchor="w")
+        self.info_lbl = ctk.CTkLabel(self.sidebar, text=f"Creator: Agrey Albert Moses", 
+                                     text_color="#4285F4", font=("Arial", 10, "italic"))
+        self.info_lbl.pack(side="bottom", pady=20)
 
         # --- MAIN CHAT ---
         self.main_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -36,69 +41,53 @@ class SerraInterface(ctk.CTk):
         self.chat_display = ctk.CTkScrollableFrame(self.main_container, fg_color="transparent")
         self.chat_display.grid(row=0, column=0, sticky="nsew", padx=20, pady=10)
 
-        # --- INPUT BAR (The Command Center) ---
+        # --- INPUT BAR ---
         self.input_area = ctk.CTkFrame(self.main_container, fg_color="#1e1f20", corner_radius=30)
         self.input_area.grid(row=1, column=0, padx=40, pady=30, sticky="ew")
 
-        # Attach File
         self.attach_btn = ctk.CTkButton(self.input_area, text="+", width=40, fg_color="transparent", 
                                         font=("Arial", 24), command=self.upload_file)
         self.attach_btn.pack(side="left", padx=10)
 
-        # Text Input
-        self.entry = ctk.CTkEntry(self.input_area, placeholder_text="Ask Serra...", 
+        self.entry = ctk.CTkEntry(self.input_area, placeholder_text="Ongea na Serra...", 
                                   fg_color="transparent", border_width=0, font=("Arial", 16))
         self.entry.pack(side="left", fill="x", expand=True, padx=5)
         self.entry.bind("<Return>", lambda e: self.send_message())
 
-        # Go Live Button (Voice)
+        # Go Live Button
         self.live_btn = ctk.CTkButton(self.input_area, text="Go Live", width=80, corner_radius=20,
-                                      fg_color="#4285F4", hover_color="#3367D6", font=("Arial", 12, "bold"),
-                                      command=self.go_live)
+                                      fg_color="#4285F4", command=self.go_live)
         self.live_btn.pack(side="right", padx=5)
 
-        # Send Button
         self.send_btn = ctk.CTkButton(self.input_area, text="➤", width=40, fg_color="transparent", 
                                       command=self.send_message)
         self.send_btn.pack(side="right", padx=10)
 
     def add_bubble(self, text, sender="serra"):
-        """WhatsApp-style bubble with internal labels"""
         row = ctk.CTkFrame(self.chat_display, fg_color="transparent")
         row.pack(fill="x", pady=10)
 
-        # Rangi na Majina
-        if sender == "user":
-            bubble_color = "#004a77"
-            text_color = "white"
-            name_tag = "YOU"
-            side = "right"
-            padx = (100, 20)
-        else:
-            bubble_color = "#2b2c2e"
-            text_color = "#e3e3e3"
-            name_tag = "SERRA"
-            side = "left"
-            padx = (20, 100)
+        side = "right" if sender == "user" else "left"
+        color = "#004a77" if sender == "user" else "#2b2c2e"
+        name_tag = "YOU" if sender == "user" else "SERRA"
 
-        # Main Bubble Frame
-        bubble = ctk.CTkFrame(row, fg_color=bubble_color, corner_radius=18)
-        bubble.pack(side=side, padx=padx)
+        bubble = ctk.CTkFrame(row, fg_color=color, corner_radius=18)
+        bubble.pack(side=side, padx=20)
 
-        # Jina ndani ya Bubble (Kama WhatsApp)
-        name_label = ctk.CTkLabel(bubble, text=name_tag, font=("Arial", 10, "bold"), 
-                                  text_color="#8ab4f8" if sender == "serra" else "#a8d3ff")
-        name_label.pack(anchor="w", padx=15, pady=(5, 0))
+        name_lbl = ctk.CTkLabel(bubble, text=name_tag, font=("Arial", 10, "bold"), 
+                                text_color="#8ab4f8")
+        name_lbl.pack(anchor="w", padx=15, pady=(5, 0))
 
-        # Content Label
-        content_label = ctk.CTkLabel(bubble, text="", text_color=text_color, 
-                                     font=("Arial", 14), wraplength=450, justify="left")
-        content_label.pack(padx=15, pady=(2, 10))
+        content_lbl = ctk.CTkLabel(bubble, text="", text_color="#e3e3e3", 
+                                   wraplength=500, justify="left", font=("Arial", 14))
+        content_lbl.pack(padx=15, pady=(2, 10))
 
         if sender == "serra":
-            self.animate_text(content_label, text)
+            self.animate_text(content_lbl, text)
+            # Serra anongea sauti pia
+            threading.Thread(target=lambda: (self.speaker.say(text), self.speaker.runAndWait()), daemon=True).start()
         else:
-            content_label.configure(text=text)
+            content_lbl.configure(text=text)
 
     def animate_text(self, label, text):
         def type_it(i=0):
@@ -108,26 +97,8 @@ class SerraInterface(ctk.CTk):
                 self.after(15, lambda: type_it(i + 1))
         type_it()
 
-    def clear_chat(self):
-        """Inasafisha chat zote kwa ajili ya New Chat"""
-        for child in self.chat_display.winfo_children():
-            child.destroy()
-        self.add_bubble("Neural links refreshed. I'm ready for a new task.", sender="serra")
-
-    def send_message(self):
-        query = self.entry.get()
-        if query:
-            self.entry.delete(0, 'end')
-            self.add_bubble(query, sender="user")
-            threading.Thread(target=self.get_response, args=(query,), daemon=True).start()
-
-    def get_response(self, query):
-        res = self.brain.generate_response(query)
-        self.add_bubble(res, sender="serra")
-
     def go_live(self):
-        """Voice Recognition mode"""
-        self.live_btn.configure(text="Listening...", fg_color="#ea4335")
+        self.live_btn.configure(text="Sikiliza...", fg_color="#ea4335")
         threading.Thread(target=self.voice_thread, daemon=True).start()
 
     def voice_thread(self):
@@ -136,16 +107,28 @@ class SerraInterface(ctk.CTk):
             try:
                 audio = r.listen(source, timeout=5)
                 query = r.recognize_google(audio)
-                self.after(0, lambda: self.process_voice_input(query))
-            except:
-                self.after(0, lambda: self.live_btn.configure(text="Go Live", fg_color="#4285F4"))
-        
-    def process_voice_input(self, query):
-        self.live_btn.configure(text="Go Live", fg_color="#4285F4")
+                self.after(0, lambda: self.process_input(query))
+            except: pass
+            self.after(0, lambda: self.live_btn.configure(text="Go Live", fg_color="#4285F4"))
+
+    def send_message(self):
+        query = self.entry.get()
+        if query:
+            self.entry.delete(0, 'end')
+            self.process_input(query)
+
+    def process_input(self, query):
         self.add_bubble(query, sender="user")
-        threading.Thread(target=self.get_response, args=(query,), daemon=True).start()
+        threading.Thread(target=self.get_ai_response, args=(query,), daemon=True).start()
+
+    def get_ai_response(self, query):
+        res = self.brain.generate_response(query)
+        self.add_bubble(res, sender="serra")
+
+    def clear_chat(self):
+        for child in self.chat_display.winfo_children():
+            child.destroy()
 
     def upload_file(self):
-        file = filedialog.askopenfilename()
-        if file: 
-            self.add_bubble(f"📎 File: {os.path.basename(file)}", sender="user")
+        f = filedialog.askopenfilename()
+        if f: self.add_bubble(f"📎 File: {os.path.basename(f)}", sender="user")

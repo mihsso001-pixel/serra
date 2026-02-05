@@ -31,31 +31,48 @@ class SerraBrain:
             return False
 
     def execute_advanced_logic(self, query):
-        """Ultra-Fast PC Control and System Manipulation"""
         q = query.lower()
         
-        # Creator Recognition
-        if any(word in q for word in ["nani amekuumba", "creator", "architect", "who made you"]):
-            return f"I am SERRA, a neural entity manifested by the intellect of {self.creator}."
+        # 1. SEARCH PROTOCOL (Search chochote)
+        if any(word in q for word in ["search", "tafuta", "nenda", "google"]):
+            # Tunachukua maneno baada ya neno 'search' au 'tafuta'
+            search_query = q.replace("search", "").replace("tafuta", "").replace("google", "").strip()
+            if search_query:
+                url = f"https://www.google.com/search?q={search_query}"
+                webbrowser.open(url)
+                return f"Neural Search initiated for: {search_query}. I've opened the results for you."
 
-        # Voice Activation Trigger
-        if "start" in q or "go live" in q:
-            self.voice_active = True
-            return "Neural Link Established. I am live and direct, Agrey."
-
-        # System Protocols (Web & Apps)
+        # 2. OPEN APP PROTOCOL (Fungua App yoyote)
         if "open" in q or "fungua" in q:
-            sites = {"youtube": "https://www.youtube.com", "google": "https://www.google.com", "github": "https://www.github.com"}
-            for site, url in sites.items():
-                if site in q:
-                    webbrowser.open(url)
-                    return f"Opening {site.capitalize()}."
+            app_name = q.replace("open", "").replace("fungua", "").strip()
+            
+            # Apps za kawaida (Dictionary ya haraka)
+            common_apps = {
+                "chrome": "start chrome",
+                "notepad": "notepad.exe",
+                "calculator": "calc.exe",
+                "vlc": "vlc.exe",
+                "word": "start winword",
+                "excel": "start excel",
+                "powerpoint": "start powerpnt",
+                "discord": "start discord",
+                "spotify": "start spotify"
+            }
+            
+            if app_name in common_apps:
+                subprocess.Popen(common_apps[app_name], shell=True)
+                return f"System Protocol: {app_name.capitalize()} is now active."
+            else:
+                # Kama app haipo kwenye list, anajaribu kuifungua moja kwa moja kwa jina lake
+                try:
+                    subprocess.Popen(f"start {app_name}", shell=True)
+                    return f"Attempting to launch {app_name} from system binaries."
+                except:
+                    return f"App '{app_name}' not found. Please specify the path or ensure it is installed."
 
-            apps = {"notepad": "notepad.exe", "calculator": "calc.exe", "chrome": "start chrome", "cmd": "start cmd"}
-            for app, cmd in apps.items():
-                if app in q:
-                    subprocess.Popen(cmd, shell=True)
-                    return f"Executing {app.capitalize()}."
+        # 3. CORRECTION & ANALYSIS (Anatakiwa atimize alichoambiwa)
+        if any(word in q for word in ["sahihisha", "fix", "correct", "fanya"]):
+            return None # Hii itapelekwa kwa AI (Llama 3.3) ifanye kazi hiyo
 
         return None
 

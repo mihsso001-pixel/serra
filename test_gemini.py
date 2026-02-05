@@ -2,7 +2,7 @@ from google import genai
 import os
 
 # Weka API Key yako mpya hapa (Ihakiki haina space mwanzo wala mwisho)
-API_KEY = "WEKA_KEY_YAKO_HAPA"
+API_KEY = "AIzaSyBmMWiZSfyzlGyRGoMTZUazbAH8HOv6ESI"
 
 def test_serra():
     print("--- SERRA BRAIN: FORCE V2 CONNECTION ---")

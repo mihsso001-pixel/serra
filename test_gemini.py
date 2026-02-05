@@ -2,7 +2,8 @@ from google import genai
 import os
 
 # API Key yako (Ihakiki hapa kama haina space mwishoni)
-API_KEY = "AIzaSyBX_KLp0IChE2PfJBRlU30qJKpdUrZCEnI"
+API_KEY = "# API Key yako mpya
+API_KEY = "AIzaSyD8JtXi8zwa4KCDxa-z2BghRQhnjUG3b6Y""
 
 def test_modern_engine():
     print("--- SERRA ULTIMATE RECOVERY TEST ---")

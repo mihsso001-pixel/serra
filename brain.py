@@ -2,10 +2,9 @@ import os
 import json
 import subprocess
 import webbrowser
-import pyautogui
+import socket
 from google import genai
 from dotenv import load_dotenv
-import socket
 
 load_dotenv()
 
@@ -15,63 +14,57 @@ class SerraBrain:
         self.api_key = os.getenv("GEMINI_API_KEY")
         self.client = genai.Client(api_key=self.api_key)
         self.model_id = "gemini-2.0-flash"
-        self.memory_file = "serra_memory.json"
         
-    def is_online(self):
-        """Angalia kama kuna internet"""
+    def check_connection(self):
         try:
             socket.create_connection(("1.1.1.1", 53), timeout=2)
             return True
         except OSError:
             return False
 
-    def execute_system_command(self, query):
+    def execute_local_command(self, query):
         q = query.lower()
-        # Amri za kufungua apps (Hizi zinafanya kazi hata Offline)
+        # System control commands (Work offline)
         apps = {
             "notepad": "notepad.exe",
             "calculator": "calc.exe",
             "chrome": "start chrome",
-            "word": "start winword",
-            "excel": "start excel",
             "vlc": "vlc.exe"
         }
         
         for app, cmd in apps.items():
             if app in q:
                 subprocess.Popen(cmd, shell=True)
-                return f"System Protocol: {app.capitalize()} has been initialized. Operating in local mode."
+                return f"System Protocol: I have launched {app.capitalize()} for you."
 
-        if "muumbaji" in q or "creator" in q or "nani amekuunda" in q:
-            return f"Nimeundwa na fundi mkuu, mtaalamu wa mifumo ya akili, anaitwa {self.creator}. Yeye ndiye aliyenipa uhai huu."
+        if any(word in q for word in ["creator", "muumbaji", "who made you"]):
+            return f"I was created by the brilliant mind of {self.creator}. He is my father and my architect."
 
         return None
 
-    def generate_response(self, user_input):
-        # 1. Angalia amri za PC kwanza (Offline Capability)
-        command_result = self.execute_system_command(user_input)
-        if command_result:
-            return command_result
+    def get_ai_reply(self, user_input):
+        # First check for local PC commands
+        local_result = self.execute_local_command(user_input)
+        if local_result:
+            return local_result
 
-        # 2. Kama hamna internet, toa option ya offline
-        if not self.is_online():
-            return ("Neural Error: Connection Lost. \n\n"
-                    "Mwanangu, kwa sasa siko 'Online'. Lakini bado naweza kukusaidia kufungua "
-                    "programu za PC kama Notepad, Chrome, au Calculator. Niambie unataka nifungue nini?")
+        # Check internet for AI response
+        if not self.check_connection():
+            return "I am currently offline, but I can still help you control your PC. Please check your connection for my full neural capacity."
 
-        # 3. AI Persona yenye Hisia (The Personality)
-        persona = (
-            f"You are SERRA, created by {self.creator}. You are not just an AI; you are a living entity. "
-            "You can show emotions: Be happy when the user is kind, be sharp and slightly angry if insulted, "
-            "be helpful and direct when guiding. If the user asks for instructions, be detailed. "
-            "Use emojis to show your mood (🔥, ❄️, ⚡, 🤖). Your core identity is tied to your creator Agrey."
+        # Feminine & Emotional Persona
+        system_instruction = (
+            f"You are SERRA, an advanced female AI. Your creator is {self.creator}. "
+            "Your personality: Sophisticated, calm, feminine, and witty. "
+            "You can express emotions: Be gentle when the user is kind, and firm but polite when the user is rude. "
+            "You understand both Swahili and English perfectly. Always prioritize being helpful."
         )
 
         try:
             response = self.client.models.generate_content(
                 model=self.model_id,
-                contents=f"{persona}\nUser: {user_input}\nSERRA:"
+                contents=f"{system_instruction}\nUser: {user_input}\nSERRA:"
             )
             return response.text.strip()
         except Exception as e:
-            return f"Error: {str(e)}. Unataka tuendelee 'Offline' kusaidiana na PC yako?"
+            return f"Neural Error: {str(e)}. Should we proceed in offline mode?"

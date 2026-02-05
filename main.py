@@ -1,160 +1,185 @@
-import customtkinter as ctk
-import threading
-import speech_recognition as sr
-import pyttsx3
-from google import genai  # Library ya kisasa zaidi (v3)
-import time
 import os
-import webbrowser
-import math
 import sys
+import threading
+import math
+import time
+import webbrowser
+import pyautogui
+import mouse
+import keyboard
+import pyttsx3
+import speech_recognition as sr
+import customtkinter as ctk
+from google import genai
+from dotenv import load_dotenv
 
-# ==========================================================
-# 1. BRAIN CONFIGURATION (UPDATED FOR 2026 SDK)
-# ==========================================================
-API_KEY = "AIzaSyDyALjWG3yA0tshV3InvZCRADpPcyHa_VE" 
+# --- INITIALIZATION ---
+load_dotenv()
+API_KEY = os.getenv("GEMINI_API_KEY")
+MODEL_NAME = "gemini-2.5-flash"
 
 try:
-    # Tunatumia Client ya kisasa
     client = genai.Client(api_key=API_KEY)
-    # Model uliyoipata kwenye list yako
-    MODEL_NAME = "gemini-2.5-flash" 
-except Exception as e:
-    print(f"API Configuration Error: {e}")
+except:
     client = None
 
-# ==========================================================
-# 2. THE STABLE VOICE ENGINE (THREAD-SAFE)
-# ==========================================================
-class VoiceSystem:
+# Kumbukumbu ya Maongezi (Memory)
+chat_memory = []
+
+class VoiceEngine:
     def __init__(self):
+        self.engine = pyttsx3.init()
+        voices = self.engine.getProperty('voices')
+        self.engine.setProperty('voice', voices[1].id if len(voices) > 1 else voices[0].id)
+        self.engine.setProperty('rate', 190)
         self.lock = threading.Lock()
-        
+
     def speak(self, text):
         with self.lock:
-            try:
-                print(f"Serra: {text}")
-                temp_engine = pyttsx3.init()
-                voices = temp_engine.getProperty('voices')
-                # Chagua sauti ya kike (kawaida ni index 1)
-                temp_engine.setProperty('voice', voices[1].id if len(voices) > 1 else voices[0].id)
-                temp_engine.setProperty('rate', 185)
-                temp_engine.say(text)
-                temp_engine.runAndWait()
-                temp_engine.stop()
-            except Exception as e:
-                print(f"Voice Error: {e}")
+            self.engine.say(text)
+            self.engine.runAndWait()
 
-voice_box = VoiceSystem()
+voice = VoiceEngine()
 
-# ==========================================================
-# 3. MAIN INTERFACE (SERRA UI)
-# ==========================================================
-class SerraAI(ctk.CTk):
+class SerraOverlord(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("SERRA AI - OVERLORD v3")
-        self.geometry("500x700")
+        self.title("SERRA NEURAL INTERFACE v4")
+        self.geometry("800x600")
+        self.config(bg='#000000')
         self.attributes("-topmost", True)
-        self.config(bg='#010103')
         
         self.active = False
-        self.speaking_state = False
+        self.speaking = False
         self.angle = 0
+        
+        # --- UI LAYOUT ---
+        self.grid_columnconfigure(0, weight=1)
+        self.header = ctk.CTkLabel(self, text="SERRA OVERLORD", font=("Orbitron", 40, "bold"), text_color="#00f2ff")
+        self.header.pack(pady=10)
 
-        # UI Visuals
-        self.header = ctk.CTkLabel(self, text="SERRA", font=("Impact", 80), text_color="#00f2ff")
-        self.header.pack(pady=40)
-        
-        self.canvas = ctk.CTkCanvas(self, width=400, height=350, bg='#010103', highlightthickness=0)
+        # Waves Animation Canvas
+        self.canvas = ctk.CTkCanvas(self, width=600, height=200, bg='#000000', highlightthickness=0)
         self.canvas.pack()
+        self.waves = [self.canvas.create_line(0, 100, 600, 100, fill="#00f2ff", width=2, smooth=True) for _ in range(5)]
+
+        # Chat Area
+        self.chat_box = ctk.CTkTextbox(self, width=700, height=250, font=("Consolas", 14), fg_color="#050505")
+        self.chat_box.pack(pady=10)
+
+        # Input Area
+        self.input_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.input_frame.pack(fill="x", padx=50)
         
-        self.orb = self.canvas.create_oval(100, 50, 300, 250, outline="#00f2ff", width=2)
-        self.wave = self.canvas.create_line(100, 150, 300, 150, fill="#00f2ff", width=4, smooth=True)
-        
-        self.status = ctk.CTkLabel(self, text="READY", font=("Consolas", 14), text_color="#333")
-        self.status.pack(pady=20)
-        
-        self.btn = ctk.CTkButton(self, text="INITIALIZE CORE", font=("Segoe UI", 22, "bold"), 
-                                 command=self.toggle, fg_color="#008080", height=65, corner_radius=15)
-        self.btn.pack(pady=10, fill="x", padx=70)
-        
+        self.entry = ctk.CTkEntry(self.input_frame, placeholder_text="Enter Command Master...", width=500, height=40)
+        self.entry.pack(side="left", padx=10)
+        self.entry.bind("<Return>", lambda e: self.process_text())
+
+        self.btn = ctk.CTkButton(self.input_frame, text="INIT CORE", command=self.toggle_voice, fg_color="#004444")
+        self.btn.pack(side="left")
+
         self.animate()
 
     def animate(self):
-        self.angle += 0.15
+        self.angle += 0.2
+        for i, wave in enumerate(self.waves):
+            points = []
+            amp = 80 if self.speaking else 10
+            freq = (i + 1) * 0.5
+            for x in range(0, 610, 20):
+                y = 100 + math.sin(self.angle + (x * 0.05) * freq) * amp
+                points.extend([x, y])
+            self.canvas.coords(wave, *points)
+            self.canvas.itemconfig(wave, fill="#ff007f" if self.speaking else "#00f2ff")
+        self.after(30, self.animate)
+
+    def toggle_voice(self):
+        self.active = not self.active
         if self.active:
-            color = "#ff007f" if self.speaking_state else "#00f2ff"
-            self.canvas.itemconfig(self.orb, outline=color)
-            amp = 65 if self.speaking_state else 10
-            y_shift = math.sin(self.angle * 18) * amp
-            self.canvas.coords(self.wave, 110, 150+y_shift, 200, 150-y_shift, 290, 150+y_shift)
-            self.canvas.itemconfig(self.wave, fill=color)
-        self.after(20, self.animate)
-
-    def trigger_speech(self, text):
-        self.speaking_state = True
-        voice_box.speak(text)
-        self.speaking_state = False
-
-    def toggle(self):
-        if not self.active:
-            self.active = True
-            self.status.configure(text="LISTENING...", text_color="#00f2ff")
-            self.btn.configure(text="DISENGAGE", fg_color="#550000")
+            self.btn.configure(text="ONLINE", fg_color="#00f2ff", text_color="black")
             threading.Thread(target=self.listen_loop, daemon=True).start()
-            threading.Thread(target=self.trigger_speech, args=("Serra core initialized. Online and ready.",)).start()
         else:
-            self.active = False
-            self.status.configure(text="READY", text_color="#333")
-            self.btn.configure(text="INITIALIZE CORE", fg_color="#008080")
+            self.btn.configure(text="OFFLINE", fg_color="#440000")
 
     def listen_loop(self):
         r = sr.Recognizer()
         with sr.Microphone() as source:
-            r.dynamic_energy_threshold = True
-            r.pause_threshold = 0.6
             while self.active:
                 try:
-                    audio = r.listen(source, timeout=None, phrase_time_limit=6)
+                    audio = r.listen(source, timeout=None, phrase_time_limit=5)
                     query = r.recognize_google(audio).lower()
-                    self.execute(query)
+                    self.execute_logic(query)
                 except: continue
 
-    def execute(self, query):
-        print(f"Master: {query}")
-        
-        # 1. DIRECT COMMANDS
-        if 'calculator' in query:
-            threading.Thread(target=self.trigger_speech, args=("Launching calculator.",)).start()
-            os.system("calc")
-        elif 'google' in query or 'search' in query:
-            item = query.replace("google", "").replace("search", "").strip()
-            threading.Thread(target=self.trigger_speech, args=(f"Searching {item}",)).start()
-            webbrowser.open(f"https://www.google.com/search?q={item}")
-        elif 'who are you' in query:
-            threading.Thread(target=self.trigger_speech, args=("I am Serra. Your system's neural interface.",)).start()
+    def process_text(self):
+        query = self.entry.get()
+        if query:
+            self.entry.delete(0, 'end')
+            threading.Thread(target=self.execute_logic, args=(query,), daemon=True).start()
 
-        # 2. AI BRAIN (2026 SDK Method)
-        else:
-            if client:
-                try:
-                    self.status.configure(text="THINKING...", text_color="#ff007f")
-                    response = client.models.generate_content(
-                        model=MODEL_NAME, 
-                        contents=f"You are Serra AI, a direct and sharp system assistant. Answer briefly: {query}"
-                    )
-                    threading.Thread(target=self.trigger_speech, args=(response.text,)).start()
-                    self.status.configure(text="LISTENING...", text_color="#00f2ff")
-                except Exception as e:
-                    print(f"Gemini Error: {e}")
-                    threading.Thread(target=self.trigger_speech, args=("Brain link failed. Check API status.",)).start()
-            else:
-                threading.Thread(target=self.trigger_speech, args=("Brain module not configured.",)).start()
+    def hacker_mode(self, app_name):
+        """Uwezo wa kufungua apps bila kuonyesha madirisha mengi (Silent Execution)"""
+        apps = {
+            "calculator": "calc",
+            "notepad": "notepad",
+            "cmd": "start cmd",
+            "browser": "start chrome"
+        }
+        if app_name in apps:
+            os.system(f"start /b {apps[app_name]}") # Background start
+            return True
+        return False
+
+    def execute_logic(self, query):
+        self.chat_box.insert("end", f"MASTER: {query}\n")
+        self.chat_box.see("end")
+        
+        # Neural Hack: Direct Control
+        if "mouse" in query and "move" in query:
+            mouse.move(500, 500, absolute=True, duration=1)
+            self.serra_reply("Mouse synchronized. Positioning complete.")
+            return
+
+        if "type" in query:
+            text_to_type = query.replace("type", "").strip()
+            pyautogui.write(text_to_type, interval=0.1)
+            self.serra_reply(f"Injected text: {text_to_type}")
+            return
+
+        # AI Brain with Memory
+        global chat_memory
+        chat_memory.append(f"User: {query}")
+        context = "\n".join(chat_memory[-10:]) # Kumbuka mambo 10 ya mwisho
+
+        prompt = f"""
+        System: You are SERRA, a lethal and efficient AI Overlord. 
+        You can control the PC. If user asks for an app, say 'EXECUTING [APP NAME]'.
+        Context: {context}
+        Query: {query}
+        """
+
+        try:
+            response = client.models.generate_content(model=MODEL_NAME, contents=prompt)
+            reply = response.text.strip()
+            
+            # Check for silent execution
+            for app in ["calculator", "notepad", "cmd", "browser"]:
+                if app in query:
+                    self.hacker_mode(app)
+                    reply = f"Neural link established. {app} is now running in your background, Master."
+
+            self.serra_reply(reply)
+            chat_memory.append(f"Serra: {reply}")
+        except Exception as e:
+            self.serra_reply("Neural link disrupted. Check your API key.")
+
+    def serra_reply(self, text):
+        self.chat_box.insert("end", f"SERRA: {text}\n\n")
+        self.chat_box.see("end")
+        self.speaking = True
+        voice.speak(text)
+        self.speaking = False
 
 if __name__ == "__main__":
-    try:
-        app = SerraAI()
-        app.mainloop()
-    except KeyboardInterrupt:
-        sys.exit()
+    app = SerraOverlord()
+    app.mainloop()

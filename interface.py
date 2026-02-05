@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog
 import threading
 import os
 import speech_recognition as sr
@@ -9,14 +9,17 @@ class SerraInterface(ctk.CTk):
     def __init__(self, brain):
         super().__init__()
         self.brain = brain
-        self.title("SERRA")
+        
+        # Window Setup
+        self.title("SERRA NEURAL INTERFACE")
         self.geometry("1100x850")
         self.configure(fg_color="#131314")
 
-        # Voice Engine
-        self.speaker = pyttsx3.init()
+        # Initialize Voice Engine (Female & Slow)
+        self.tts_engine = pyttsx3.init()
+        self.setup_female_voice()
 
-        # Layout
+        # Grid Configuration
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
@@ -24,111 +27,123 @@ class SerraInterface(ctk.CTk):
         self.sidebar = ctk.CTkFrame(self, width=280, corner_radius=0, fg_color="#1e1f20")
         self.sidebar.grid(row=0, column=0, sticky="nsew")
         
-        self.new_btn = ctk.CTkButton(self.sidebar, text="+ New Chat", corner_radius=25, 
-                                     fg_color="#303132", height=45, command=self.clear_chat)
-        self.new_btn.pack(pady=30, padx=20)
+        self.new_chat_btn = ctk.CTkButton(self.sidebar, text="+ New Session", corner_radius=25, 
+                                          fg_color="#303132", height=45, command=self.reset_chat)
+        self.new_chat_btn.pack(pady=30, padx=20)
         
-        self.info_lbl = ctk.CTkLabel(self.sidebar, text=f"Creator: Agrey Albert Moses", 
-                                     text_color="#4285F4", font=("Arial", 10, "italic"))
-        self.info_lbl.pack(side="bottom", pady=20)
+        self.credits = ctk.CTkLabel(self.sidebar, text=f"Architect: Agrey Albert Moses", 
+                                     text_color="#4285F4", font=("Arial", 11, "italic"))
+        self.credits.pack(side="bottom", pady=20)
 
         # --- MAIN CHAT ---
-        self.main_container = ctk.CTkFrame(self, fg_color="transparent")
-        self.main_container.grid(row=0, column=1, sticky="nsew")
-        self.main_container.grid_rowconfigure(0, weight=1)
-        self.main_container.grid_columnconfigure(0, weight=1)
+        self.chat_container = ctk.CTkFrame(self, fg_color="transparent")
+        self.chat_container.grid(row=0, column=1, sticky="nsew")
+        self.chat_container.grid_rowconfigure(0, weight=1)
+        self.chat_container.grid_columnconfigure(0, weight=1)
 
-        self.chat_display = ctk.CTkScrollableFrame(self.main_container, fg_color="transparent")
-        self.chat_display.grid(row=0, column=0, sticky="nsew", padx=20, pady=10)
+        self.scroll_frame = ctk.CTkScrollableFrame(self.chat_container, fg_color="transparent")
+        self.scroll_frame.grid(row=0, column=0, sticky="nsew", padx=20, pady=10)
 
-        # --- INPUT BAR ---
-        self.input_area = ctk.CTkFrame(self.main_container, fg_color="#1e1f20", corner_radius=30)
-        self.input_area.grid(row=1, column=0, padx=40, pady=30, sticky="ew")
+        # --- INPUT AREA ---
+        self.bottom_bar = ctk.CTkFrame(self.chat_container, fg_color="#1e1f20", corner_radius=30)
+        self.bottom_bar.grid(row=1, column=0, padx=40, pady=30, sticky="ew")
 
-        self.attach_btn = ctk.CTkButton(self.input_area, text="+", width=40, fg_color="transparent", 
-                                        font=("Arial", 24), command=self.upload_file)
-        self.attach_btn.pack(side="left", padx=10)
+        self.add_file_btn = ctk.CTkButton(self.bottom_bar, text="+", width=40, fg_color="transparent", 
+                                          font=("Arial", 24), command=self.handle_upload)
+        self.add_file_btn.pack(side="left", padx=10)
 
-        self.entry = ctk.CTkEntry(self.input_area, placeholder_text="Ongea na Serra...", 
-                                  fg_color="transparent", border_width=0, font=("Arial", 16))
-        self.entry.pack(side="left", fill="x", expand=True, padx=5)
-        self.entry.bind("<Return>", lambda e: self.send_message())
+        self.user_input = ctk.CTkEntry(self.bottom_bar, placeholder_text="Message Serra...", 
+                                       fg_color="transparent", border_width=0, font=("Arial", 16))
+        self.user_input.pack(side="left", fill="x", expand=True, padx=5)
+        self.user_input.bind("<Return>", lambda e: self.send_request())
 
-        # Go Live Button
-        self.live_btn = ctk.CTkButton(self.input_area, text="Go Live", width=80, corner_radius=20,
-                                      fg_color="#4285F4", command=self.go_live)
+        self.live_btn = ctk.CTkButton(self.bottom_bar, text="Go Live", width=80, corner_radius=20,
+                                      fg_color="#4285F4", command=self.start_voice_mode)
         self.live_btn.pack(side="right", padx=5)
 
-        self.send_btn = ctk.CTkButton(self.input_area, text="➤", width=40, fg_color="transparent", 
-                                      command=self.send_message)
+        self.send_btn = ctk.CTkButton(self.bottom_bar, text="➤", width=40, fg_color="transparent", 
+                                      command=self.send_request)
         self.send_btn.pack(side="right", padx=10)
 
-    def add_bubble(self, text, sender="serra"):
-        row = ctk.CTkFrame(self.chat_display, fg_color="transparent")
+    def setup_female_voice(self):
+        """Finds a female voice and slows down the speech rate"""
+        voices = self.tts_engine.getProperty('voices')
+        # Usually, voices[1] is female on Windows, but we check for 'female' in name
+        for voice in voices:
+            if "female" in voice.name.lower() or "zira" in voice.name.lower():
+                self.tts_engine.setProperty('voice', voice.id)
+                break
+        self.tts_engine.setProperty('rate', 165) # Slower pace for elegance
+
+    def create_bubble(self, message, role="serra"):
+        row = ctk.CTkFrame(self.scroll_frame, fg_color="transparent")
         row.pack(fill="x", pady=10)
 
-        side = "right" if sender == "user" else "left"
-        color = "#004a77" if sender == "user" else "#2b2c2e"
-        name_tag = "YOU" if sender == "user" else "SERRA"
+        align = "right" if role == "user" else "left"
+        bg_color = "#004a77" if role == "user" else "#2b2c2e"
+        display_name = "YOU" if role == "user" else "SERRA"
 
-        bubble = ctk.CTkFrame(row, fg_color=color, corner_radius=18)
-        bubble.pack(side=side, padx=20)
+        bubble = ctk.CTkFrame(row, fg_color=bg_color, corner_radius=18)
+        bubble.pack(side=align, padx=20)
 
-        name_lbl = ctk.CTkLabel(bubble, text=name_tag, font=("Arial", 10, "bold"), 
-                                text_color="#8ab4f8")
-        name_lbl.pack(anchor="w", padx=15, pady=(5, 0))
+        name_tag = ctk.CTkLabel(bubble, text=display_name, font=("Arial", 10, "bold"), text_color="#8ab4f8")
+        name_tag.pack(anchor="w", padx=15, pady=(5, 0))
 
-        content_lbl = ctk.CTkLabel(bubble, text="", text_color="#e3e3e3", 
-                                   wraplength=500, justify="left", font=("Arial", 14))
-        content_lbl.pack(padx=15, pady=(2, 10))
+        content = ctk.CTkLabel(bubble, text="", text_color="#e3e3e3", wraplength=500, justify="left", font=("Arial", 14))
+        content.pack(padx=15, pady=(2, 10))
 
-        if sender == "serra":
-            self.animate_text(content_lbl, text)
-            # Serra anongea sauti pia
-            threading.Thread(target=lambda: (self.speaker.say(text), self.speaker.runAndWait()), daemon=True).start()
+        if role == "serra":
+            self.typewriter_effect(content, message)
+            # Run voice in a separate thread so it doesn't freeze the UI
+            threading.Thread(target=self.speak_text, args=(message,), daemon=True).start()
         else:
-            content_lbl.configure(text=text)
+            content.configure(text=message)
 
-    def animate_text(self, label, text):
+    def typewriter_effect(self, label, text):
         def type_it(i=0):
             if i <= len(text):
                 label.configure(text=text[:i])
-                self.chat_display._parent_canvas.yview_moveto(1.0)
+                self.scroll_frame._parent_canvas.yview_moveto(1.0)
                 self.after(15, lambda: type_it(i + 1))
         type_it()
 
-    def go_live(self):
-        self.live_btn.configure(text="Sikiliza...", fg_color="#ea4335")
-        threading.Thread(target=self.voice_thread, daemon=True).start()
+    def speak_text(self, text):
+        self.tts_engine.say(text)
+        self.tts_engine.runAndWait()
 
-    def voice_thread(self):
-        r = sr.Recognizer()
+    def send_request(self):
+        msg = self.user_input.get()
+        if msg:
+            self.user_input.delete(0, 'end')
+            self.create_bubble(msg, role="user")
+            threading.Thread(target=self.fetch_ai_response, args=(msg,), daemon=True).start()
+
+    def fetch_ai_response(self, query):
+        reply = self.brain.get_ai_reply(query)
+        self.create_bubble(reply, role="serra")
+
+    def reset_chat(self):
+        for widget in self.scroll_frame.winfo_children():
+            widget.destroy()
+
+    def start_voice_mode(self):
+        self.live_btn.configure(text="Listening...", fg_color="#ea4335")
+        threading.Thread(target=self.listen_thread, daemon=True).start()
+
+    def listen_thread(self):
+        recognizer = sr.Recognizer()
         with sr.Microphone() as source:
             try:
-                audio = r.listen(source, timeout=5)
-                query = r.recognize_google(audio)
-                self.after(0, lambda: self.process_input(query))
+                audio = recognizer.listen(source, timeout=5)
+                text = recognizer.recognize_google(audio)
+                self.after(0, lambda: self.handle_voice_input(text))
             except: pass
             self.after(0, lambda: self.live_btn.configure(text="Go Live", fg_color="#4285F4"))
 
-    def send_message(self):
-        query = self.entry.get()
-        if query:
-            self.entry.delete(0, 'end')
-            self.process_input(query)
+    def handle_voice_input(self, text):
+        self.create_bubble(text, role="user")
+        threading.Thread(target=self.fetch_ai_response, args=(text,), daemon=True).start()
 
-    def process_input(self, query):
-        self.add_bubble(query, sender="user")
-        threading.Thread(target=self.get_ai_response, args=(query,), daemon=True).start()
-
-    def get_ai_response(self, query):
-        res = self.brain.generate_response(query)
-        self.add_bubble(res, sender="serra")
-
-    def clear_chat(self):
-        for child in self.chat_display.winfo_children():
-            child.destroy()
-
-    def upload_file(self):
+    def handle_upload(self):
         f = filedialog.askopenfilename()
-        if f: self.add_bubble(f"📎 File: {os.path.basename(f)}", sender="user")
+        if f: self.create_bubble(f"📎 File Attached: {os.path.basename(f)}", role="user")

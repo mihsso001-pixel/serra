@@ -1,7 +1,7 @@
 from google import genai
 
 # Weka ile API Key yako mpya hapa (Hakikisha haina space)
-API_KEY = "PASTE_YOUR_KEY_HERE"
+API_KEY = "AIzaSyBmMWiZSfyzlGyRGoMTZUazbAH8HOv6ESI"
 
 def test_serra():
     print("--- SERRA BRAIN: ULTIMATE CONNECTION ---")

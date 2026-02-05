@@ -7,7 +7,7 @@ import math
 import sys
 
 # --- CONFIGURATION ---
-API_KEY = "AIzaSyBX_KLp0IChE2PfJBRlU30qJKpdUrZCEnI" 
+API_KEY = "AIzaSyDyALjWG3yA0tshV3InvZCRADpPcyHa_VE" 
 MODEL_NAME = "gemini-2.5-flash"
 
 try:

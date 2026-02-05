@@ -1,34 +1,26 @@
 import google.generativeai as genai
 
-# API Key yako
 API_KEY = "AIzaSyBX_KLp0IChE2PfJBRlU30qJKpdUrZCEnI"
 
-print("--- SERRA BRAIN CHECK (GEMINI TEST) ---")
-print("Connecting to neural network...")
-
-try:
-    # 1. Configuration
+def test_connection():
+    print("--- SERRA BRAIN RECOVERY MODE ---")
     genai.configure(api_key=API_KEY)
     
-    # 2. Initialize Model (Tunatumia jina kamili kuzuia 404)
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    # Tunajaribu majina yote maarufu ya Gemini
+    possible_models = ['gemini-pro', 'gemini-1.5-flash', 'gemini-1.0-pro']
     
-    # 3. Simple Prompt
-    prompt = "Hello Gemini! If you can hear me, say 'Serra Brain is Online!'"
+    for model_name in possible_models:
+        try:
+            print(f"Trying model: {model_name}...")
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content("Say 'Connected!'", generation_config={"timeout": 10})
+            print(f"\nSUCCESS! Model '{model_name}' is working.")
+            print(f"Gemini says: {response.text}")
+            return model_name
+        except Exception as e:
+            print(f"Failed with {model_name}: {e}")
     
-    print(f"Sending request: '{prompt}'")
-    
-    # 4. Response with timeout handling
-    response = model.generate_content(prompt)
-    
-    print("\n" + "="*30)
-    print(f"GEMINI RESPONSE: {response.text}")
-    print("="*30)
-    print("\nSUCCESS! Injini imewaka, Serra yuko tayari.")
+    print("\n[!] Mwanangu, model zote zimekataa. Inawezekana API Key ina shida ya Quota.")
 
-except Exception as e:
-    print("\n" + "!"*30)
-    print("FAILURE! Shida imetokea:")
-    print(f"Error Message: {e}")
-    print("!"*30)
-    print("\nUshauri: Hakikisha una internet na API Key haijafika kikomo (limit).")
+if __name__ == "__main__":
+    test_connection()

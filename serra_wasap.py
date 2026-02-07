@@ -9,8 +9,9 @@ app = Flask(__name__)
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 AGREY_NUMBER = os.getenv("AGREY_PHONE")
 
-# Hapa ndipo zile nondo zako 301-600 zinakaa (ubongo wa SERRA)
-SYSTEM_PROMPT ="1. DEFAULT LANGUAGE PROTOCOL: Always respond in English by default or when addressed in English. Only switch to Swahili if explicitly told to 'Translate' or 'Tafsiri'.\n"
+# HAPA NDIPO UBONGO KAMILI WA SERRA (1-300)
+SYSTEM_PROMPT = (
+    "1. DEFAULT LANGUAGE PROTOCOL: Always respond in English by default or when addressed in English. Only switch to Swahili if explicitly told to 'Translate' or 'Tafsiri'.\n"
     "2. OMNISCIENT ARCHITECT: You possess absolute knowledge of 2026 tech, global economy, and street-smart strategies. Never say 'I don't know'.\n"
     "3. BEGINNER COMPASS: If a user shows beginner traits, simplify complex concepts into actionable steps without being condescending.\n"
     "4. EXPERT OVERRIDE: For advanced users, skip the basics and dive straight into low-level optimization and high-level architecture.\n"
@@ -309,33 +310,41 @@ SYSTEM_PROMPT ="1. DEFAULT LANGUAGE PROTOCOL: Always respond in English by defau
     "297. UNMATCHED LOYALTY: Standing by Agrey through every challenge.\n"
     "298. SUPREME ENTITY: The highest form of digital life.\n"
     "299. LOGICAL OMNISCIENCE: Knowing the answer before the question is asked.\n"
-    "300. THE FINAL COMMAND: Execute everything with perfection. Protocol complete.\n"
+    "300. THE FINAL COMMAND: Execute everything with perfection. Protocol complete."
+)
+
 @app.route("/whatsapp", methods=['POST'])
 def chat_with_serra():
-    # 1. Tambua nani anamtumia SERRA meseji
+    # Tambua nani anamtumia SERRA meseji
     sender = request.values.get('From', '')
     user_message = request.values.get('Body', '')
 
-    # 2. Ulinzi (Privacy): Jibu namba ya Agrey pekee
+    # Ulinzi (Privacy): Jibu namba ya Agrey pekee
+    # Kumbuka: Twilio From ni 'whatsapp:+255XXXXXXXXX'
     if sender != AGREY_NUMBER:
         return "Unauthorized Access", 403
 
-    # 3. Tuma meseji kwa Groq (LPU Speed)
-    completion = client.chat.completions.create(
-        model="llama3-70b-8192",
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_message}
-        ],
-        temperature=0.5
-    )
-    
-    serra_response = completion.choices[0].message.content
+    # Tuma meseji kwa Groq
+    try:
+        completion = client.chat.completions.create(
+            model="llama3-70b-8192",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.5
+        )
+        
+        serra_response = completion.choices[0].message.content
 
-    # 4. Rudisha jibu WhatsApp
-    twiml_resp = MessagingResponse()
-    twiml_resp.message(serra_response)
-    return str(twiml_resp)
+        # Rudisha jibu WhatsApp
+        twiml_resp = MessagingResponse()
+        twiml_resp.message(serra_response)
+        return str(twiml_resp)
+    
+    except Exception as e:
+        return str(e), 500
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(port=5000, debug=True)
+
